@@ -68,8 +68,6 @@
     .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
     .btn-secondary { background: transparent; color: #1B3A6B; border: 2px solid #1B3A6B; }
     .btn-secondary:hover { background: #eef2ff; }
-    .btn-danger { background: transparent; color: #dc2626; border: 2px solid #dc2626; }
-    .btn-danger:hover { background: #fef2f2; }
     .btn-row { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 36px; }
     .btn-row.center { justify-content: center; }
 
@@ -156,12 +154,6 @@
 
     /* Divider */
     hr.divider { border: none; border-top: 1px solid #e5e7eb; margin: 28px 0; }
-
-    /* Remaining bar (secondary) */
-    .remaining-bar-wrap { background: #f3f4f6; border-radius: 8px; padding: 14px 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 16px; }
-    .remaining-bar-track { flex: 1; height: 8px; background: #dde3ef; border-radius: 4px; }
-    .remaining-bar-fill { height: 100%; background: #1B3A6B; border-radius: 4px; transition: width 0.4s; }
-    .remaining-bar-text { font-size: 13px; font-weight: 600; color: #1B3A6B; white-space: nowrap; }
 
     /* Conditional note */
     .note-box { background: #fff8e1; border: 1px solid #ffd54f; border-radius: 6px; padding: 14px 20px; font-size: 14px; color: #6d5900; margin-bottom: 24px; }
@@ -405,6 +397,7 @@ function getCost(id, val) {
 function totalSpent() {
   let s = 0;
   for (const [id, val] of Object.entries(state.decisions)) {
+    if (+id === 14 && !hasLandA()) continue; // D14 only counts if Land Option A is selected
     s += getCost(+id, val);
   }
   return s;
@@ -469,7 +462,10 @@ function nextPage(cur) {
     const v = state.decisions[1];
     return (v !== undefined && v !== null && v < 10_000_000) ? 'early-end' : 'd2';
   }
-  if (cur === 'd13') return hasLandA() ? 'd14' : 'report';
+  if (cur === 'd13') {
+    if (!hasLandA()) delete state.decisions[14]; // clear stale D14 value if Land A no longer chosen
+    return hasLandA() ? 'd14' : 'report';
+  }
   if (cur === 'd14') return 'report';
   const i = PAGE_SEQ.indexOf(cur);
   return PAGE_SEQ[i + 1] || 'report';
@@ -564,8 +560,8 @@ function renderSliderPage(d) {
   const avail = availableFor(d.id);
   const maxVal = d.id === 14 ? avail : d.max;
   const cur = Math.min(state.decisions[d.id] ?? 0, maxVal);
+  state.decisions[d.id] = cur; // sync stored value to what's displayed so remaining funds are accurate
 
-  const pct = maxVal > 0 ? (cur / maxVal) * 100 : 0;
   const perCapita = d.id === 1 ? `<div class="slider-per-capita">Per capita: ${fmt(cur / 1000)} per eligible member</div>` : '';
   const note = d.id === 14
     ? `<div class="note-box">This decision is only available because you selected <strong>Land Option A</strong>. The maximum you can invest is limited to your remaining available funds (${fmt(maxVal)}).</div>`
@@ -726,7 +722,7 @@ function renderReport() {
 // ─────────────────────────────────────────────
 function renderEarlyEnd() {
   const pcd = state.decisions[1] || 0;
-  const gdp = pcd * 1.5;
+  const gdp = getGDP(1);
   return `
   <div class="inner" style="text-align:center">
     <div class="early-badge">Game Over</div>
@@ -758,9 +754,8 @@ function initChart() {
   let labels, data, colors;
 
   if (state.page === 'early-end') {
-    const pcd = state.decisions[1] || 0;
     labels = ['Per Capita Distributions'];
-    data = [pcd * 1.5];
+    data = [getGDP(1)];
     colors = [CHART_COLORS[0]];
   } else {
     const { results } = allGDP();
