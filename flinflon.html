@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maximizing Economic Growth in Flin Flon: An Investment Climate Decision Game</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #fff; color: #1a1a2e; min-height: 100vh; }
+
+    /* ── HEADER ── */
+    #sticky-header {
+      position: fixed; top: 0; left: 0; right: 0; background: #fff;
+      border-bottom: 1px solid #e5e7eb; z-index: 200;
+      padding: 10px 40px 0;
+    }
+    .header-row { display: flex; align-items: center; justify-content: space-between; padding-bottom: 10px; }
+    .header-logo { height: 47px; filter: brightness(0); }
+    .funds-block { text-align: right; }
+    .funds-label { font-size: 11px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.8px; }
+    .funds-amount { font-size: 20px; font-weight: 700; color: #8B0000; }
+    .progress-track { height: 4px; background: #e5e7eb; }
+    .progress-fill { height: 100%; background: #8B0000; transition: width 0.45s ease; width: 0%; }
+
+    /* ── PAGES ── */
+    #app { min-height: 100vh; }
+
+    .landing-wrap {
+      min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; text-align: center;
+      padding: 60px 40px;
+    }
+    .landing-logo { height: 73px; margin-bottom: 44px; filter: brightness(0); }
+    .game-title {
+      font-size: clamp(24px, 4vw, 40px); font-weight: 700; color: #8B0000;
+      line-height: 1.2; max-width: 720px; margin-bottom: 28px;
+    }
+    .intro-text {
+      font-size: 17px; color: #374151; line-height: 1.75;
+      max-width: 680px; margin-bottom: 48px;
+    }
+
+    .inner {
+      max-width: 1000px; margin: 0 auto;
+      padding: 110px 48px 80px;
+    }
+
+    .page-title { font-size: 26px; font-weight: 700; color: #8B0000; margin-bottom: 20px; }
+    .page-body {
+      font-size: 15.5px; color: #374151; line-height: 1.8;
+      max-width: 840px; margin-bottom: 28px;
+    }
+    .page-body ul { padding-left: 24px; margin-top: 8px; }
+    .page-body li { margin-bottom: 6px; }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 12px 32px; border-radius: 6px; font-size: 15px; font-weight: 600;
+      cursor: pointer; border: none; transition: all 0.18s; text-decoration: none;
+    }
+    .btn-primary { background: #8B0000; color: #fff; }
+    .btn-primary:hover { background: #660000; }
+    .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-secondary { background: transparent; color: #8B0000; border: 2px solid #8B0000; }
+    .btn-secondary:hover { background: #eef2ff; }
+    .btn-row { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 36px; }
+    .btn-row.center { justify-content: center; }
+
+    .options-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .option-card {
+      border: 2px solid #dde3ef; border-radius: 10px; padding: 22px;
+      cursor: pointer; transition: all 0.18s; background: #fff; position: relative;
+    }
+    .option-card:hover:not(.disabled) { border-color: #8B0000; background: #f5f8ff; }
+    .option-card.selected { border-color: #8B0000; background: #eef2ff; }
+    .option-card.disabled { opacity: 0.38; cursor: not-allowed; pointer-events: none; background: #f9fafb; }
+    .option-label { font-size: 12px; font-weight: 700; color: #8B0000; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 10px; }
+    .option-text { font-size: 14.5px; color: #374151; line-height: 1.55; margin-bottom: 12px; }
+    .option-cost { font-size: 13.5px; font-style: italic; color: #6b7280; }
+    .insufficient-tag { font-size: 11.5px; color: #dc2626; font-weight: 600; margin-top: 8px; }
+
+    .slider-block { margin: 20px 0 32px; }
+    .slider-display {
+      display: inline-block; background: #8B0000; color: #fff;
+      font-size: 30px; font-weight: 700; padding: 12px 28px;
+      border-radius: 8px; margin-bottom: 22px;
+    }
+    input[type=range].slider {
+      -webkit-appearance: none; appearance: none; width: 100%; height: 6px;
+      border-radius: 3px; background: #dde3ef; outline: none; cursor: pointer;
+    }
+    input[type=range].slider::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none; width: 22px; height: 22px; border-radius: 50%;
+      background: #8B0000; cursor: pointer; box-shadow: 0 2px 8px rgba(139,0,0,0.3);
+    }
+    .slider-labels { display: flex; justify-content: space-between; font-size: 12px; color: #9ca3af; margin-top: 6px; }
+
+    .report-header { text-align: center; margin-bottom: 28px; }
+    .report-title { font-size: 30px; font-weight: 700; color: #8B0000; }
+    .report-intro { font-size: 15px; color: #374151; line-height: 1.8; max-width: 820px; margin: 0 auto 36px; }
+    .chart-layout { display: flex; flex-wrap: wrap; gap: 32px; align-items: flex-start; margin-bottom: 32px; }
+    .chart-canvas-wrap { flex: 1; min-width: 280px; max-width: 460px; }
+    .gdp-breakdown { flex: 1; min-width: 260px; }
+    .gdp-total-box {
+      text-align: center; background: #8B0000; color: #fff;
+      border-radius: 10px; padding: 20px 32px; margin-bottom: 32px;
+      font-size: 22px; font-weight: 700;
+    }
+    .gdp-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid #f3f4f6; font-size: 14px; }
+    .gdp-label { display: flex; align-items: center; gap: 9px; color: #374151; }
+    .color-dot { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
+    .gdp-val { font-weight: 600; color: #8B0000; white-space: nowrap; }
+
+    .early-badge {
+      display: inline-block; background: #dc2626; color: #fff;
+      font-size: 13px; font-weight: 700; padding: 6px 18px;
+      border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px;
+      margin-bottom: 20px;
+    }
+    .early-title { font-size: 28px; font-weight: 700; color: #dc2626; margin-bottom: 20px; line-height: 1.2; }
+
+    .modify-table { width: 100%; border-collapse: collapse; margin: 24px 0; }
+    .modify-table th {
+      text-align: left; padding: 11px 16px;
+      border-bottom: 2px solid #8B0000;
+      font-size: 12px; font-weight: 700; color: #8B0000; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .modify-table td { padding: 13px 16px; border-bottom: 1px solid #f0f2f8; font-size: 14.5px; color: #374151; vertical-align: top; }
+    .modify-table tr:hover td { background: #f8faff; }
+    .edit-btn {
+      padding: 5px 16px; border: 1.5px solid #8B0000; border-radius: 4px;
+      background: transparent; color: #8B0000; font-size: 13px; font-weight: 600;
+      cursor: pointer; white-space: nowrap;
+    }
+    .edit-btn:hover { background: #8B0000; color: #fff; }
+
+    .bg-card {
+      background: #f8faff; border-left: 4px solid #8B0000;
+      border-radius: 6px; padding: 28px 32px; margin-bottom: 24px;
+    }
+    .bg-subtitle { font-size: 18px; font-weight: 700; color: #8B0000; margin-bottom: 14px; }
+
+    hr.divider { border: none; border-top: 1px solid #e5e7eb; margin: 28px 0; }
+
+    .note-box { background: #fff8e1; border: 1px solid #ffd54f; border-radius: 6px; padding: 14px 20px; font-size: 14px; color: #6d5900; margin-bottom: 24px; }
+
+    @media (max-width: 640px) {
+      .inner { padding: 100px 20px 60px; }
+      #sticky-header { padding: 8px 16px 0; }
+      .options-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="sticky-header" style="display:none">
+  <div class="header-row">
+    <img src="Test 1/FR-New-1-Plain.png" class="header-logo" alt="Fiscal Realities Economists">
+    <div class="funds-block">
+      <div class="funds-label">Remaining Funds</div>
+      <div class="funds-amount" id="hdr-funds">$100,000,000</div>
+    </div>
+  </div>
+  <div class="progress-track">
+    <div class="progress-fill" id="prog-fill"></div>
+  </div>
+</div>
+
+<div id="app"></div>
+
+<script>
+// ─────────────────────────────────────────────
+// CONSTANTS & DATA
+// ─────────────────────────────────────────────
+const TOTAL = 100_000_000;
+
+const DECISIONS = [
+  {
+    id: 1, type: 'slider', name: 'Investment Climate Reform',
+    title: '1. Investment Climate Reform Package',
+    body: `How much of the Economic Development Fund will be committed to the Investment Climate Reform Package — the core set of institutional improvements designed to reduce the cost of doing business in Flin Flon and signal a credible commitment to private sector investment?<br><br>
+The package includes four components:<ul>
+<li><strong>One-Stop Development Office:</strong> A dedicated office to streamline building permits, rezoning applications, environmental reviews, and business licensing. Target: reduce approval timelines from an average of 18 months to under 60 days, making Flin Flon competitive with southern Manitoba communities.</li>
+<li><strong>Updated Official Community Plan:</strong> A modern, investor-friendly land use plan with clear development designations, permitted uses, and approval processes. Investors need certainty about future land allocation before committing capital.</li>
+<li><strong>Flin Flon Investor Code:</strong> A formal commitment to regulatory timelines, fee structures, and dispute resolution procedures — one of the lowest-cost, highest-impact investments a municipality can make in its investment climate.</li>
+<li><strong>Business Property Tax Incentive Program:</strong> A 5-year tax incentive for new commercial and industrial tenants, phasing in from 100% to 0% over the term. This directly lowers the transaction costs for businesses considering Flin Flon.</li>
+</ul><br>
+<strong>Note:</strong> The provincial government's economic development partnership requires a minimum commitment of <strong>$10,000,000</strong> to the Investment Climate Reform Package to proceed.`,
+    min: 0, max: TOTAL, step: 500_000, gdpMult: 2.5
+  },
+  {
+    id: 2, type: 'choice', name: 'Industrial Land Strategy',
+    title: '2. Industrial Land Strategy',
+    body: `Access to development-ready, serviced industrial land is consistently ranked by businesses as one of the most critical factors in location decisions. Flin Flon's existing industrial area has reached capacity and lacks infrastructure to support modern manufacturing or processing facilities. Two strategies are available:<br><br>
+<strong>Industrial Park Option A — New Northern Industrial Park</strong><br>
+Staff have identified a 200-acre municipal parcel north of the city, accessible from Provincial Road 10A. Development of a fully serviced industrial park — with paved internal roads, water and wastewater connections, industrial-grade electrical servicing, and fibre optic connectivity — is estimated to cost <strong>$15 million</strong>. This would create approximately 30 shovel-ready lots for sale or lease, positioning Flin Flon to attract an anchor employer in mining services, processing, or advanced manufacturing. Selecting this option unlocks a further investment decision later in the game.<br><br>
+<strong>Industrial Park Option B — Upgrade Existing Industrial Area</strong><br>
+The existing industrial area could be substantially upgraded for approximately <strong>$5 million</strong>. This would not increase lot capacity, but would extend the serviceable life of current facilities, allow modest expansion by existing tenants, and bring the area to a standard that satisfies modern industrial requirements.`,
+    options: [
+      { label: 'Response #1', text: 'New Northern Industrial Park only — maximum growth potential through new development-ready industrial land.', cost: 15_000_000 },
+      { label: 'Response #2', text: 'Upgrade existing industrial area only — extend and improve current capacity at lower cost.', cost: 5_000_000 },
+      { label: 'Response #3', text: 'Both — develop the new Northern Industrial Park and upgrade the existing area to maximize total industrial land capacity.', cost: 20_000_000 },
+      { label: 'Response #4', text: 'Neither — defer industrial land investment and focus resources on other priorities.', cost: 0 },
+    ]
+  },
+  {
+    id: 3, type: 'choice', name: 'Municipal Stabilization Reserve',
+    title: '3. Municipal Stabilization Reserve',
+    body: 'Prudent financial management requires that a portion of any large, one-time receipt be set aside in a stabilization reserve. This reserve protects the municipality against future revenue shortfalls, unexpected capital requirements, or economic shocks — such as a further downturn in the resource sector. How much of the Economic Development Fund do you recommend be placed in the Stabilization Reserve?',
+    options: [
+      { label: 'Response #1', text: '$50 million. Half should be saved to ensure the city\'s long-term fiscal stability.', cost: 50_000_000 },
+      { label: 'Response #2', text: '$0. The economic benefits generated by investing all funds now will far exceed the returns from a reserve fund, especially given Flin Flon\'s urgent need for economic diversification.', cost: 0 },
+      { label: 'Response #3', text: '$25 million. One-quarter of the fund should be reserved for future fiscal stability.', cost: 25_000_000 },
+    ]
+  },
+  {
+    id: 4, type: 'choice', name: 'Municipal Debt Repayment',
+    title: '4. Municipal Debt Repayment',
+    body: 'A portion of the fund could be used to retire outstanding municipal debt. Flin Flon currently carries $5 million in outstanding debt: $3 million in higher-interest debentures (at 5.5% per annum) and $2 million in lower-rate provincial infrastructure loans (at 2.8%). Retiring all outstanding debt would save the municipality approximately $200,000 per year in interest charges. Do you include debt repayment in your Recommended Investment Plan?',
+    options: [
+      { label: 'Response #1', text: 'Retire all outstanding debt ($5M)', cost: 5_000_000 },
+      { label: 'Response #2', text: 'Retire higher-interest debentures only ($3M)', cost: 3_000_000 },
+      { label: 'Response #3', text: 'Retire lower-interest provincial loans only ($2M)', cost: 2_000_000 },
+      { label: 'Response #4', text: 'Retire no debt — preserve all capital for economic investment ($0)', cost: 0 },
+    ]
+  },
+  {
+    id: 5, type: 'choice', name: 'Broadband & Digital Infrastructure',
+    title: '5. Broadband & Digital Infrastructure',
+    body: 'High-speed internet connectivity has become a prerequisite for modern economic activity. Flin Flon\'s current internet infrastructure is aging, with service gaps affecting both residential and commercial users. Businesses cite limited connectivity as a barrier to expansion, and the absence of reliable high-speed internet deters remote workers and technology-sector businesses. The IT Department has outlined two investment options:<br><br><strong>Phase 1 — Commercial District Fibre ($5 million):</strong> Fibre optic cable serving the downtown commercial core, both industrial areas, and the Creighton border crossing. Business users would gain access to symmetrical gigabit service.<br><br><strong>Full Build — City-Wide Fibre Network ($12 million):</strong> A complete city-wide fibre network covering all commercial, industrial, and residential addresses — positioning Flin Flon as one of the best-connected small cities in western Canada.',
+    options: [
+      { label: 'Response #1', text: 'No investment in broadband infrastructure at this time.', cost: 0 },
+      { label: 'Response #2', text: 'Phase 1: Commercial district fibre only, prioritizing the downtown core and industrial areas ($5M).', cost: 5_000_000 },
+      { label: 'Response #3', text: 'Full city-wide fibre network for all commercial and residential addresses ($12M).', cost: 12_000_000 },
+      { label: 'Response #4', text: 'Full city-wide network plus regional connectivity to Creighton and Snow Lake ($18M).', cost: 18_000_000 },
+    ]
+  },
+  {
+    id: 6, type: 'choice', name: 'Healthcare & Physician Recruitment',
+    title: '6. Healthcare & Physician Recruitment',
+    body: 'Access to quality healthcare is one of the most significant factors influencing whether skilled workers and their families choose to live in a community. Flin Flon General Hospital has faced persistent physician shortages, and the absence of specialist services requires residents to travel to Winnipeg or The Pas for routine procedures. The Health Authority is seeking funding for two initiatives:<br><br><strong>Physician Recruitment Program ($2 million over 5 years):</strong> Signing bonuses, relocation allowances, and housing support to recruit and retain family physicians and specialists.<br><br><strong>Multi-Specialist Clinic Expansion ($5 million):</strong> Construction of a new clinic adjacent to the hospital capable of hosting visiting specialists, telemedicine services, and expanded diagnostic imaging.',
+    options: [
+      { label: 'Response #1', text: 'No investment in healthcare at this time.', cost: 0 },
+      { label: 'Response #2', text: 'Physician recruitment program only ($2M).', cost: 2_000_000 },
+      { label: 'Response #3', text: 'Full proposal: physician recruitment and clinic expansion ($7M).', cost: 7_000_000 },
+      { label: 'Response #4', text: '$12M. Healthcare is a critical investment. The full proposal should be funded, plus additional resources for mental health and long-term care planning.', cost: 12_000_000 },
+    ]
+  },
+  {
+    id: 7, type: 'choice', name: 'Workforce Housing',
+    title: '7. Workforce Housing',
+    body: `A persistent shortage of affordable, quality housing has been identified as a significant barrier to attracting and retaining skilled workers in Flin Flon. Several businesses have reported turning down expansion opportunities because they could not house incoming employees. The Housing Department has a proposal with two components:<ul>
+<li>A request for <strong>$6 million</strong> for the immediate construction of 30 modular workforce housing units for rent to incoming workers and young professionals; and</li>
+<li>A request for <strong>$8 million</strong> for a revolving low-interest mortgage loan fund to help residents purchase or substantially renovate their homes, improving the city's long-term housing stock.</li>
+</ul>How much of the Economic Development Fund do you allocate to Workforce Housing?`,
+    options: [
+      { label: 'Response #1', text: 'No investment in workforce housing at this time.', cost: 0 },
+      { label: 'Response #2', text: 'Workforce housing construction only — 30 new units for incoming workers ($6M).', cost: 6_000_000 },
+      { label: 'Response #3', text: 'Full proposal: housing construction and revolving mortgage fund ($14M).', cost: 14_000_000 },
+      { label: 'Response #4', text: '$20M. Workforce housing is a critical investment. Both components should be fully funded, with additional units and expanded mortgage support.', cost: 20_000_000 },
+    ]
+  },
+  {
+    id: 8, type: 'choice', name: 'Skills Training & Workforce Development',
+    title: '8. Skills Training & Workforce Development',
+    body: 'Economic growth in Flin Flon requires a locally skilled workforce. Businesses expanding or relocating to the city consistently cite the availability of trained workers as a key deciding factor. The Economic Development Office has partnered with Red River College Polytechnic to design a local skills training initiative with two phases:<br><br><strong>Trades Training Hub ($2 million):</strong> A satellite trades training program covering electricians, welders, heavy equipment operators, and industrial mechanics — skills in high demand in mining services and advanced manufacturing.<br><br><strong>Business & Entrepreneurship Centre ($3 million):</strong> A small business incubator and entrepreneurship support program offering mentorship, shared workspace, and access to microloan financing for local startups.',
+    options: [
+      { label: 'Response #1', text: 'No investment in skills training at this time.', cost: 0 },
+      { label: 'Response #2', text: 'Trades Training Hub only — priority on skilled trades in high demand ($2M).', cost: 2_000_000 },
+      { label: 'Response #3', text: 'Full proposal: Trades Training Hub and Business & Entrepreneurship Centre ($5M).', cost: 5_000_000 },
+      { label: 'Response #4', text: '$10M. Workforce development is a critical investment. Full funding should be provided, plus apprenticeship incentives and a post-secondary scholarship fund.', cost: 10_000_000 },
+    ]
+  },
+  {
+    id: 9, type: 'choice', name: 'Tourism & Outdoor Recreation',
+    title: '9. Tourism & Outdoor Recreation Development',
+    body: 'Flin Flon is surrounded by extraordinary natural assets — over 200 lakes within 30 kilometres, world-class walleye and northern pike fishing, abundant wildlife, and a dramatic Precambrian Shield landscape. Tourism is among the most promising sectors for economic diversification. The Tourism Department has two proposals:<br><br><strong>Trails & Access Infrastructure ($3 million):</strong> A maintained network of hiking, cycling, and snowmobile trails connecting the city to key lakes and wilderness areas, along with improved boat launches, docks, and day-use facilities.<br><br><strong>Visitor Centre & Events Fund ($5 million):</strong> Construction of a modern visitor centre and multi-year funding to expand the annual Trout Festival into a regional destination event, supported by a targeted destination marketing campaign.',
+    options: [
+      { label: 'Response #1', text: 'No investment in tourism at this time.', cost: 0 },
+      { label: 'Response #2', text: 'Trails and outdoor access infrastructure only ($3M).', cost: 3_000_000 },
+      { label: 'Response #3', text: 'Visitor centre and events fund only ($5M).', cost: 5_000_000 },
+      { label: 'Response #4', text: 'Full tourism development: trails, visitor centre, and destination marketing ($8M).', cost: 8_000_000 },
+      { label: 'Response #5', text: '$12M. Tourism is a critical investment. Full funding plus accommodation development incentives and regional promotion partnerships.', cost: 12_000_000 },
+    ]
+  },
+  {
+    id: 10, type: 'choice', name: 'Economic Development Corporation',
+    title: '10. Economic Development Corporation',
+    body: 'Communities that have successfully attracted private investment have often done so through a well-resourced, professionally-staffed Economic Development Corporation (EDC) — a semi-independent entity mandated exclusively to attract, facilitate, and retain business investment. An EDC can conduct proactive outreach to target industries, respond rapidly to investor inquiries, manage an inventory of development-ready land and space, and provide hands-on support through the approval process. The proposal before Council includes two components:<br><br><strong>Core EDC Establishment ($3 million):</strong> A 5-year operating budget for an Economic Development Officer, marketing coordinator, and investor relations function.<br><br><strong>Investment Attraction Fund ($7 million):</strong> A dedicated fund for targeted investment attraction campaigns, trade show participation, feasibility study support, and infrastructure contribution agreements with anchor tenants.',
+    options: [
+      { label: 'Response #1', text: 'No investment in an Economic Development Corporation at this time.', cost: 0 },
+      { label: 'Response #2', text: 'Core EDC establishment only — professional staff and basic operating budget ($3M).', cost: 3_000_000 },
+      { label: 'Response #3', text: 'Full EDC with Investment Attraction Fund ($10M).', cost: 10_000_000 },
+      { label: 'Response #4', text: '$15M. The EDC should be fully resourced with a regional partnership mandate, sector development programs, and an expanded Investment Attraction Fund.', cost: 15_000_000 },
+    ]
+  },
+  {
+    id: 11, type: 'choice', name: 'Downtown Commercial Revitalization',
+    title: '11. Downtown Commercial Revitalization',
+    body: 'The vitality of Flin Flon\'s downtown commercial district is both an economic and quality-of-life priority. Vacant storefronts, aging building stock, and limited retail variety have made it difficult to attract new commercial tenants. A vibrant downtown also signals to prospective residents and businesses that the community is healthy and investable. The Planning Department has developed a revitalization strategy:<br><br><strong>Façade Improvement Grants ($2 million):</strong> A matching grant program for commercial building owners to upgrade storefronts, signage, and building exteriors.<br><br><strong>Strategic Vacancy Acquisition ($4 million):</strong> Municipal acquisition of key vacant properties for redevelopment as a small business incubator, market hall, and professional office space.',
+    options: [
+      { label: 'Response #1', text: 'No investment in downtown revitalization at this time.', cost: 0 },
+      { label: 'Response #2', text: 'Façade improvement grants only — support property owners to upgrade their buildings ($2M).', cost: 2_000_000 },
+      { label: 'Response #3', text: 'Façade grants plus strategic property acquisition for redevelopment ($6M).', cost: 6_000_000 },
+      { label: 'Response #4', text: '$10M. A full downtown revitalization is a critical investment, including public realm improvements, grants, and strategic acquisitions.', cost: 10_000_000 },
+    ]
+  },
+  {
+    id: 12, type: 'choice', name: 'Environmental Sustainability',
+    title: '12. Environmental Sustainability & Climate Adaptation',
+    body: 'Flin Flon\'s history as a mining and smelting community has created an environmental legacy that must be addressed as part of any credible economic development strategy. Investors and workers alike increasingly scrutinize communities\' environmental management track records. Climate change also presents infrastructure challenges for northern Manitoba. The Environmental Services Department is seeking funding for two programs:<br><br><strong>Environmental Monitoring & Stewardship ($5 million):</strong> Enhanced environmental monitoring around legacy mine sites, development of a community environmental management plan, and seed funding for remediation partnership initiatives with provincial and federal agencies.<br><br><strong>Climate Adaptation Infrastructure ($5 million):</strong> Upgrades to drainage and flood management infrastructure, energy efficiency retrofits for municipal buildings, and a permafrost risk assessment program.',
+    options: [
+      { label: 'Response #1', text: 'No investment in environmental programs at this time.', cost: 0 },
+      { label: 'Response #2', text: 'Environmental monitoring and stewardship only ($5M).', cost: 5_000_000 },
+      { label: 'Response #3', text: 'Climate adaptation infrastructure only ($5M).', cost: 5_000_000 },
+      { label: 'Response #4', text: 'Full environmental and climate program ($10M).', cost: 10_000_000 },
+    ]
+  },
+  {
+    id: 13, type: 'choice', name: 'Airport & Transportation',
+    title: '13. Airport & Transportation Connectivity',
+    body: 'Flin Flon Airport (CYFO) is a critical economic asset for a remote community, enabling business aviation, fly-in/fly-out workforce management, charter freight, and emergency services. However, the runway\'s current length limits the airport\'s utility for larger aircraft, and aging terminal facilities do not meet the expectations of business passengers or cargo operators. The Airport Commission has requested two investments:<br><br><strong>Runway Extension & Instrument Lighting ($6 million):</strong> Extension of the main runway from 4,500 to 6,000 feet — enabling larger turboprop and small jet aircraft — plus new instrument approach lighting for year-round IFR operations.<br><br><strong>Terminal & Cargo Facility Upgrades ($4 million):</strong> A modernized passenger terminal and expanded cargo handling facility to support industrial charter and freight operations.',
+    options: [
+      { label: 'Response #1', text: 'No investment in airport infrastructure at this time.', cost: 0 },
+      { label: 'Response #2', text: 'Runway extension and instrument lighting only — expand aircraft access ($6M).', cost: 6_000_000 },
+      { label: 'Response #3', text: 'Terminal and cargo facility upgrades only ($4M).', cost: 4_000_000 },
+      { label: 'Response #4', text: 'Full airport redevelopment: runway extension, terminal, and cargo facility ($10M).', cost: 10_000_000 },
+    ]
+  },
+  {
+    id: 14, type: 'slider', name: 'Northern Industrial Park Infrastructure',
+    title: '14. Northern Industrial Park Infrastructure',
+    body: 'With the Northern Industrial Park land committed to development, a significant infrastructure investment is required to bring the park to a shovel-ready standard that will attract anchor tenants. Completing the internal road network, extending water and sewer mains, installing industrial-grade electrical infrastructure, and constructing a multi-tenant industrial building to house early-stage tenants will substantially increase the park\'s attractiveness to prospective employers and generate significant local economic activity. How much of the remaining Economic Development Fund do you recommend be invested in Northern Industrial Park Infrastructure?',
+    min: 0, step: 500_000, gdpMult: 20.0
+  }
+];
+
+// GDP multipliers per option index for choice decisions
+const GDP_MULTS = {
+  3:  [0.25, 0, 0.25],
+  4:  [0.85, 0.85, 0.85, 0],
+  5:  [0, 1.6, 1.6, 1.6],
+  6:  [0, 1.4, 1.4, 1.4],
+  7:  [0, 1.75, 1.75, 1.75],
+  8:  [0, 2.1, 2.1, 2.1],
+  9:  [0, 1.6, 1.6, 1.6, 1.6],
+  10: [0, 2.5, 2.5, 2.5],
+  11: [0, 1.6, 1.6, 1.6],
+  12: [0, 1.2, 1.2, 1.2],
+  13: [0, 1.5, 1.5, 1.5],
+};
+
+const CHART_COLORS = [
+  '#4e79a7','#f28e2b','#59a14f','#7b5ea7',
+  '#ff9da7','#76b7b2','#86bcb6','#e15759',
+  '#b07aa1','#edc948','#9c755f','#bab0ac',
+  '#d37295','#8b7355'
+];
+
+// ─────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────
+let state = {
+  page: 'landing',
+  decisions: {}
+};
+
+let _chart = null;
+
+// ─────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────
+function fmt(n) {
+  return '$' + Math.round(n).toLocaleString('en-CA');
+}
+
+function dec(id) { return DECISIONS.find(d => d.id === id); }
+
+function getCost(id, val) {
+  if (val === null || val === undefined) return 0;
+  const d = dec(id);
+  if (!d) return 0;
+  return d.type === 'slider' ? val : d.options[val].cost;
+}
+
+function totalSpent() {
+  let s = 0;
+  for (const [id, val] of Object.entries(state.decisions)) {
+    if (+id === 14 && !hasIndustrialPark()) continue;
+    s += getCost(+id, val);
+  }
+  return s;
+}
+
+function remaining() { return TOTAL - totalSpent(); }
+
+function availableFor(decId) {
+  let s = 0;
+  for (const [id, val] of Object.entries(state.decisions)) {
+    if (+id !== decId) s += getCost(+id, val);
+  }
+  return TOTAL - s;
+}
+
+// Industrial park is selected if Response #1 (new park only) or Response #3 (both) chosen
+function hasIndustrialPark() {
+  const v = state.decisions[2];
+  return v === 0 || v === 2;
+}
+
+function getGDP(id) {
+  const val = state.decisions[id];
+  if (val === null || val === undefined) return 0;
+  const d = dec(id);
+  if (!d) return 0;
+
+  if (d.type === 'slider') return val * d.gdpMult;
+
+  if (id === 2) {
+    // Industrial Land Strategy — handled separately
+    if (val === 0) return 15_000_000 * 1.3;   // new park only
+    if (val === 1) return 5_000_000 * 0.8;    // upgrade only
+    if (val === 2) return 15_000_000 * 1.3 + 5_000_000 * 0.8; // both
+    return 0; // neither
+  }
+
+  const m = GDP_MULTS[id];
+  return m ? getCost(id, val) * m[val] : 0;
+}
+
+function allGDP() {
+  let results = [], total = 0;
+  for (const d of DECISIONS) {
+    if (d.id === 14 && !hasIndustrialPark()) continue;
+    const g = getGDP(d.id);
+    const c = getCost(d.id, state.decisions[d.id]);
+    if (c > 0 || g > 0) {
+      const idx = DECISIONS.indexOf(d);
+      results.push({ name: d.name, gdp: g, colorIdx: idx });
+      total += g;
+    }
+  }
+  return { results, total };
+}
+
+// ─────────────────────────────────────────────
+// NAVIGATION
+// ─────────────────────────────────────────────
+const PAGE_SEQ = ['landing','background','d1','d2','d3','d4','d5','d6','d7','d8','d9','d10','d11','d12','d13','d14','report'];
+
+function nextPage(cur) {
+  if (cur === 'd1') {
+    const v = state.decisions[1];
+    return (v !== undefined && v !== null && v < 10_000_000) ? 'early-end' : 'd2';
+  }
+  if (cur === 'd13') {
+    if (!hasIndustrialPark()) delete state.decisions[14];
+    return hasIndustrialPark() ? 'd14' : 'report';
+  }
+  if (cur === 'd14') return 'report';
+  const i = PAGE_SEQ.indexOf(cur);
+  return PAGE_SEQ[i + 1] || 'report';
+}
+
+function prevPage(cur) {
+  if (cur === 'report') return hasIndustrialPark() ? 'd14' : 'd13';
+  const i = PAGE_SEQ.indexOf(cur);
+  return i > 0 ? PAGE_SEQ[i - 1] : 'landing';
+}
+
+function navigate(p) {
+  state.page = p;
+  render();
+}
+
+function goBack() { navigate(prevPage(state.page)); }
+
+// ─────────────────────────────────────────────
+// RENDER DISPATCH
+// ─────────────────────────────────────────────
+function render() {
+  const hdr = document.getElementById('sticky-header');
+  const app = document.getElementById('app');
+  const isLanding = state.page === 'landing';
+
+  hdr.style.display = isLanding ? 'none' : 'block';
+
+  if (!isLanding) {
+    document.getElementById('hdr-funds').textContent = fmt(remaining());
+    const decPages = ['d1','d2','d3','d4','d5','d6','d7','d8','d9','d10','d11','d12','d13','d14'];
+    const total = hasIndustrialPark() ? 14 : 13;
+    const idx = decPages.indexOf(state.page);
+    const pct = state.page === 'report' ? 100 : (idx >= 0 ? ((idx + 1) / total) * 100 : 0);
+    document.getElementById('prog-fill').style.width = pct + '%';
+  }
+
+  if (_chart) { _chart.destroy(); _chart = null; }
+
+  if (state.page === 'landing')       app.innerHTML = renderLanding();
+  else if (state.page === 'background') app.innerHTML = renderBackground();
+  else if (state.page === 'early-end')  app.innerHTML = renderEarlyEnd();
+  else if (state.page === 'report')     app.innerHTML = renderReport();
+  else if (state.page === 'modify')     app.innerHTML = renderModify();
+  else if (state.page.startsWith('d'))  app.innerHTML = renderDecision(parseInt(state.page.slice(1)));
+
+  window.scrollTo(0, 0);
+
+  if (state.page === 'report' || state.page === 'early-end') initChart();
+  if (state.page.startsWith('d')) {
+    const d = dec(parseInt(state.page.slice(1)));
+    if (d && d.type === 'slider') initSlider(d.id);
+  }
+}
+
+// ─────────────────────────────────────────────
+// PAGE RENDERERS
+// ─────────────────────────────────────────────
+function renderLanding() {
+  return `
+  <div class="landing-wrap">
+    <img src="Test 1/FR-New-1-Plain.png" class="landing-logo" alt="Fiscal Realities Economists">
+    <h1 class="game-title">Maximizing Economic Growth in Flin Flon: An Investment Climate Decision Game</h1>
+    <p class="intro-text">A $100 million Economic Development Fund has been awarded to the City of Flin Flon — but how it is invested will determine the community's economic trajectory for decades. As Chief Administrative Officer, you must design a strategic investment plan that attracts private sector investment, creates sustainable employment, and strengthens Flin Flon's long-term fiscal capacity.</p>
+    <button class="btn btn-primary" onclick="navigate('background')">Start Game</button>
+  </div>`;
+}
+
+function renderBackground() {
+  return `
+  <div class="inner">
+    <div class="bg-card">
+      <div class="bg-subtitle">Background</div>
+      <p class="page-body">You are the Chief Administrative Officer (CAO) of the City of Flin Flon, Manitoba. Situated along the Manitoba-Saskatchewan border approximately 750 kilometres northwest of Winnipeg, Flin Flon is a city of approximately 5,600 residents whose economy was historically built on zinc and copper mining. The closure of major smelting operations in recent years has accelerated population decline and placed pressure on the city's revenue base and its ability to provide competitive public services and infrastructure.</p>
+      <p class="page-body">The Manitoba provincial government, in partnership with the Government of Canada, has awarded the City of Flin Flon a <strong>$100 million Economic Development Fund</strong>. The only direction from Mayor and Council is that your recommended investment plan must maximize community benefit — specifically, it must be designed to attract private sector investment, create sustainable employment, and build Flin Flon's long-term fiscal capacity.</p>
+      <p class="page-body">Private investment is the engine of economic growth. In Canada, private sector investment outweighs public sector investment by five to one, and three times as many jobs are created in the private sector as in the public sector. Attracting private investment requires a competitive investment climate — one that gives investors certainty about costs, services, infrastructure, and the rules of the game. Your challenge is to build an investment plan that delivers the most competitive investment climate possible for Flin Flon.</p>
+      <p class="page-body">You must weigh trade-offs, consider community priorities, and decide which investments will most effectively transform Flin Flon's economic trajectory for generations to come.</p>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goBack()">Back</button>
+      <button class="btn btn-primary" onclick="navigate('d1')">Continue</button>
+    </div>
+  </div>`;
+}
+
+function renderDecision(id) {
+  const d = dec(id);
+  if (!d) return '';
+  return d.type === 'slider' ? renderSliderPage(d) : renderChoicePage(d);
+}
+
+function renderSliderPage(d) {
+  const avail = availableFor(d.id);
+  const maxVal = d.id === 14 ? avail : d.max;
+  const cur = Math.min(state.decisions[d.id] ?? 0, maxVal);
+  state.decisions[d.id] = cur;
+
+  const note = d.id === 14
+    ? `<div class="note-box">This decision is only available because you selected the <strong>Northern Industrial Park</strong> option in Decision 2. The maximum you can invest is limited to your remaining available funds (${fmt(maxVal)}).</div>`
+    : '';
+
+  return `
+  <div class="inner">
+    <div class="page-title">${d.title}</div>
+    <div class="page-body">${d.body}</div>
+    ${note}
+    <div class="slider-block">
+      <div><span class="slider-display" id="slide-disp">${fmt(cur)}</span></div>
+      <br>
+      <input type="range" class="slider" id="main-slider" min="0" max="${maxVal}" step="${d.step}" value="${cur}">
+      <div class="slider-labels"><span>$0</span><span>${fmt(maxVal)}</span></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goBack()">Back</button>
+      <button class="btn btn-primary" onclick="sliderNext(${d.id})">Continue</button>
+    </div>
+  </div>`;
+}
+
+function initSlider(id) {
+  const slider = document.getElementById('main-slider');
+  const disp = document.getElementById('slide-disp');
+  if (!slider) return;
+  slider.addEventListener('input', () => {
+    const v = parseInt(slider.value);
+    state.decisions[id] = v;
+    disp.textContent = fmt(v);
+    document.getElementById('hdr-funds').textContent = fmt(remaining());
+  });
+}
+
+function sliderNext(id) {
+  const slider = document.getElementById('main-slider');
+  if (slider) state.decisions[id] = parseInt(slider.value);
+  navigate(nextPage(state.page));
+}
+
+function renderChoicePage(d) {
+  const avail = availableFor(d.id);
+  const cur = state.decisions[d.id];
+
+  const cards = d.options.map((opt, i) => {
+    const canAfford = opt.cost <= avail;
+    const sel = cur === i;
+    let cls = 'option-card';
+    if (sel) cls += ' selected';
+    if (!canAfford) cls += ' disabled';
+    return `
+      <div class="${cls}" onclick="pickChoice(${d.id},${i})">
+        <div class="option-label">${opt.label}</div>
+        <div class="option-text">${opt.text}</div>
+        <div class="option-cost">Cost: ${fmt(opt.cost)}</div>
+        ${!canAfford ? '<div class="insufficient-tag">Insufficient funds</div>' : ''}
+      </div>`;
+  }).join('');
+
+  const canContinue = cur !== null && cur !== undefined;
+
+  return `
+  <div class="inner">
+    <div class="page-title">${d.title}</div>
+    <div class="page-body">${d.body}</div>
+    <div class="options-grid">${cards}</div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goBack()">Back</button>
+      <button class="btn btn-primary" ${canContinue ? '' : 'disabled'} onclick="choiceNext(${d.id})">Continue</button>
+    </div>
+  </div>`;
+}
+
+function pickChoice(id, i) {
+  state.decisions[id] = i;
+  document.getElementById('hdr-funds').textContent = fmt(remaining());
+  const app = document.getElementById('app');
+  app.innerHTML = renderDecision(id);
+}
+
+function choiceNext(id) {
+  if (state.decisions[id] === null || state.decisions[id] === undefined) return;
+  navigate(nextPage(state.page));
+}
+
+// ─────────────────────────────────────────────
+// REPORT
+// ─────────────────────────────────────────────
+function renderReport() {
+  const { results, total } = allGDP();
+  const spent = totalSpent();
+  const rem = TOTAL - spent;
+
+  const breakdown = results.map(r => `
+    <div class="gdp-row">
+      <div class="gdp-label">
+        <div class="color-dot" style="background:${CHART_COLORS[r.colorIdx]}"></div>
+        ${r.name}
+      </div>
+      <div class="gdp-val">${fmt(r.gdp)}</div>
+    </div>`).join('');
+
+  const spendRows = DECISIONS.filter(d => {
+    if (d.id === 14 && !hasIndustrialPark()) return false;
+    const v = state.decisions[d.id];
+    return v !== null && v !== undefined && getCost(d.id, v) > 0;
+  }).map(d => {
+    const v = state.decisions[d.id];
+    const cost = getCost(d.id, v);
+    return `<div class="gdp-row"><div class="gdp-label">${d.name}</div><div class="gdp-val">${fmt(cost)}</div></div>`;
+  }).join('');
+
+  return `
+  <div class="inner">
+    <div class="report-header">
+      <div class="report-title">Report</div>
+    </div>
+    <p class="report-intro">Congratulations — you have completed your Economic Development Investment Plan for Flin Flon! The pie chart below reports the GDP impacts of your decisions, expressed as total Gross Domestic Product at market prices. These figures capture both the direct effects of your investments and the indirect ripple effects as dollars circulate through the local economy, generating employment, business revenues, and household income. As you can see, the allocation of economic development funds across categories significantly influences total economic activity. If you would like to revise your investment plan to maximize economic impact further, click the button below.</p>
+
+    <div class="gdp-total-box">TOTAL GDP at Market Prices: ${fmt(total)}</div>
+
+    <div class="chart-layout">
+      <div class="chart-canvas-wrap">
+        <canvas id="report-chart"></canvas>
+      </div>
+      <div class="gdp-breakdown">
+        <strong style="font-size:13px;text-transform:uppercase;letter-spacing:0.5px;color:#6b7280;">GDP by Category</strong>
+        <div style="margin-top:10px">${breakdown}</div>
+      </div>
+    </div>
+
+    <hr class="divider">
+    <strong style="font-size:13px;text-transform:uppercase;letter-spacing:0.5px;color:#6b7280;">Your Investment Summary</strong>
+    <div style="margin-top:10px;margin-bottom:8px">${spendRows}</div>
+    <div class="gdp-row" style="font-weight:700">
+      <div>Total Allocated</div><div class="gdp-val">${fmt(spent)}</div>
+    </div>
+    <div class="gdp-row">
+      <div style="color:#6b7280">Unallocated</div><div class="gdp-val" style="color:#6b7280">${fmt(rem)}</div>
+    </div>
+
+    <div class="btn-row center" style="margin-top:40px">
+      <button class="btn btn-secondary" onclick="navigate('modify')">Modify Investments</button>
+      <button class="btn btn-primary" onclick="navigate('modify')">A Second Chance</button>
+    </div>
+  </div>`;
+}
+
+// ─────────────────────────────────────────────
+// EARLY END
+// ─────────────────────────────────────────────
+function renderEarlyEnd() {
+  const committed = state.decisions[1] || 0;
+  const gdp = getGDP(1);
+  return `
+  <div class="inner" style="text-align:center">
+    <div class="early-badge">Investment Plan Not Approved</div>
+    <h2 class="early-title">Provincial Partnership Dissolved</h2>
+    <p class="page-body" style="max-width:680px;margin:0 auto 32px">The commitment you proposed to the Investment Climate Reform Package (${fmt(committed)}) fell below the $10,000,000 minimum required for the provincial government's economic development partnership to proceed. Without a credible signal of investment climate reform, major private investors announced they will pursue opportunities in other northern Manitoba communities. The provincial Economic Development Fund has been reallocated. The economic impact below reflects only the GDP generated by the reforms you proposed.</p>
+    <div class="gdp-total-box" style="max-width:480px;margin:0 auto 32px">GDP Impact from Investment Climate Reforms: ${fmt(gdp)}</div>
+    <div style="max-width:420px;margin:0 auto 32px">
+      <canvas id="report-chart"></canvas>
+    </div>
+    <p style="font-size:13px;color:#6b7280;margin-bottom:32px">A competitive investment climate is the foundation of economic growth. Try again with a stronger commitment to reform.</p>
+    <div class="btn-row center">
+      <button class="btn btn-primary" onclick="retryFromD1()">A Second Chance</button>
+    </div>
+  </div>`;
+}
+
+function retryFromD1() {
+  state.decisions = {};
+  navigate('d1');
+}
+
+// ─────────────────────────────────────────────
+// CHART INIT
+// ─────────────────────────────────────────────
+function initChart() {
+  const canvas = document.getElementById('report-chart');
+  if (!canvas) return;
+
+  let labels, data, colors;
+
+  if (state.page === 'early-end') {
+    labels = ['Investment Climate Reform'];
+    data = [getGDP(1)];
+    colors = [CHART_COLORS[0]];
+  } else {
+    const { results } = allGDP();
+    labels = results.map(r => r.name);
+    data = results.map(r => r.gdp);
+    colors = results.map(r => CHART_COLORS[r.colorIdx]);
+  }
+
+  _chart = new Chart(canvas, {
+    type: 'pie',
+    data: {
+      labels,
+      datasets: [{
+        data,
+        backgroundColor: colors,
+        borderColor: '#fff',
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: 'right',
+          labels: { font: { size: 12 }, padding: 14, boxWidth: 14 }
+        },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${fmt(ctx.parsed)}`
+          }
+        }
+      }
+    }
+  });
+}
+
+// ─────────────────────────────────────────────
+// MODIFY PAGE
+// ─────────────────────────────────────────────
+function renderModify() {
+  const rows = DECISIONS.map(d => {
+    if (d.id === 14 && !hasIndustrialPark()) return '';
+    const val = state.decisions[d.id];
+    let alloc = '<span style="color:#9ca3af;font-style:italic">Not set</span>';
+    if (val !== null && val !== undefined) {
+      if (d.type === 'slider') {
+        alloc = fmt(val);
+      } else {
+        alloc = `<strong>${d.options[val].label}</strong> &mdash; ${fmt(d.options[val].cost)}`;
+      }
+    }
+    return `
+      <tr>
+        <td>${d.title}</td>
+        <td>${alloc}</td>
+        <td><button class="edit-btn" onclick="editDecision(${d.id})">Edit</button></td>
+      </tr>`;
+  }).join('');
+
+  return `
+  <div class="inner">
+    <div class="page-title">Modify Investment Plan</div>
+    <p class="page-body">Review your decisions below. Click <strong>Edit</strong> to return to any decision and change your selection. When finished, view your updated report.</p>
+    <table class="modify-table">
+      <thead>
+        <tr><th>Decision</th><th>Current Allocation</th><th></th></tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="navigate('report')">Back to Report</button>
+      <button class="btn btn-primary" onclick="navigate('report')">View Updated Report</button>
+    </div>
+  </div>`;
+}
+
+function editDecision(id) {
+  navigate('d' + id);
+}
+
+// ─────────────────────────────────────────────
+// BOOT
+// ─────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
