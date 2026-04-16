@@ -16,7 +16,7 @@
       padding: 10px 40px 0;
     }
     .header-row { display: flex; align-items: center; justify-content: space-between; padding-bottom: 10px; }
-    .header-logo { height: 47px; filter: brightness(0); }
+    .header-logo { height: 47px; filter: hue-rotate(146deg) saturate(3) brightness(0.95); }
     .funds-block { text-align: right; }
     .funds-label { font-size: 11px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.8px; }
     .funds-amount { font-size: 20px; font-weight: 700; color: #8B0000; }
@@ -31,7 +31,7 @@
       align-items: center; justify-content: center; text-align: center;
       padding: 60px 40px;
     }
-    .landing-logo { height: 73px; margin-bottom: 44px; filter: brightness(0); }
+    .landing-logo { height: 73px; margin-bottom: 44px; filter: hue-rotate(146deg) saturate(3) brightness(0.95); }
     .game-title {
       font-size: clamp(24px, 4vw, 40px); font-weight: 700; color: #8B0000;
       line-height: 1.2; max-width: 720px; margin-bottom: 28px;
@@ -63,7 +63,7 @@
     .btn-primary:hover { background: #660000; }
     .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
     .btn-secondary { background: transparent; color: #8B0000; border: 2px solid #8B0000; }
-    .btn-secondary:hover { background: #eef2ff; }
+    .btn-secondary:hover { background: #fff0f0; }
     .btn-row { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 36px; }
     .btn-row.center { justify-content: center; }
 
@@ -72,8 +72,8 @@
       border: 2px solid #dde3ef; border-radius: 10px; padding: 22px;
       cursor: pointer; transition: all 0.18s; background: #fff; position: relative;
     }
-    .option-card:hover:not(.disabled) { border-color: #8B0000; background: #f5f8ff; }
-    .option-card.selected { border-color: #8B0000; background: #eef2ff; }
+    .option-card:hover:not(.disabled) { border-color: #8B0000; background: #fff5f5; }
+    .option-card.selected { border-color: #8B0000; background: #fff0f0; }
     .option-card.disabled { opacity: 0.38; cursor: not-allowed; pointer-events: none; background: #f9fafb; }
     .option-label { font-size: 12px; font-weight: 700; color: #8B0000; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 10px; }
     .option-text { font-size: 14.5px; color: #374151; line-height: 1.55; margin-bottom: 12px; }
@@ -127,7 +127,7 @@
       font-size: 12px; font-weight: 700; color: #8B0000; text-transform: uppercase; letter-spacing: 0.5px;
     }
     .modify-table td { padding: 13px 16px; border-bottom: 1px solid #f0f2f8; font-size: 14.5px; color: #374151; vertical-align: top; }
-    .modify-table tr:hover td { background: #f8faff; }
+    .modify-table tr:hover td { background: #fff8f8; }
     .edit-btn {
       padding: 5px 16px; border: 1.5px solid #8B0000; border-radius: 4px;
       background: transparent; color: #8B0000; font-size: 13px; font-weight: 600;
@@ -136,7 +136,7 @@
     .edit-btn:hover { background: #8B0000; color: #fff; }
 
     .bg-card {
-      background: #f8faff; border-left: 4px solid #8B0000;
+      background: #fff8f8; border-left: 4px solid #8B0000;
       border-radius: 6px; padding: 28px 32px; margin-bottom: 24px;
     }
     .bg-subtitle { font-size: 18px; font-weight: 700; color: #8B0000; margin-bottom: 14px; }
@@ -398,7 +398,9 @@ function remaining() { return TOTAL - totalSpent(); }
 function availableFor(decId) {
   let s = 0;
   for (const [id, val] of Object.entries(state.decisions)) {
-    if (+id !== decId) s += getCost(+id, val);
+    if (+id === decId) continue;
+    if (+id === 14 && !hasIndustrialPark()) continue;
+    s += getCost(+id, val);
   }
   return TOTAL - s;
 }
