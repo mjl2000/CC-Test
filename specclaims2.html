@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maximising the Economic Impacts of Specific Claims Settlements</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #fff; color: #1a1a2e; min-height: 100vh; }
+
+    /* ── HEADER ── */
+    #sticky-header {
+      position: fixed; top: 0; left: 0; right: 0; background: #fff;
+      border-bottom: 1px solid #e5e7eb; z-index: 200;
+      padding: 10px 40px 0;
+    }
+    .header-row { display: flex; align-items: center; justify-content: space-between; padding-bottom: 10px; }
+    .header-logo { height: 36px; }
+    .funds-block { text-align: right; }
+    .funds-label { font-size: 11px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.8px; }
+    .funds-amount { font-size: 20px; font-weight: 700; color: #1B3A6B; }
+    .progress-track { height: 4px; background: #e5e7eb; }
+    .progress-fill { height: 100%; background: #1B3A6B; transition: width 0.45s ease; width: 0%; }
+
+    /* ── PAGES ── */
+    #app { min-height: 100vh; }
+
+    /* Landing */
+    .landing-wrap {
+      min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; text-align: center;
+      padding: 60px 40px;
+    }
+    .landing-logo { height: 56px; margin-bottom: 44px; }
+    .game-title {
+      font-size: clamp(24px, 4vw, 40px); font-weight: 700; color: #1B3A6B;
+      line-height: 1.2; max-width: 720px; margin-bottom: 28px;
+    }
+    .intro-text {
+      font-size: 17px; color: #374151; line-height: 1.75;
+      max-width: 680px; margin-bottom: 48px;
+    }
+
+    /* Inner page */
+    .inner {
+      max-width: 1000px; margin: 0 auto;
+      padding: 110px 48px 80px;
+    }
+
+    /* Typography */
+    .page-title { font-size: 26px; font-weight: 700; color: #1B3A6B; margin-bottom: 20px; }
+    .page-body {
+      font-size: 15.5px; color: #374151; line-height: 1.8;
+      max-width: 840px; margin-bottom: 28px;
+    }
+    .page-body ul { padding-left: 24px; margin-top: 8px; }
+    .page-body li { margin-bottom: 6px; }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 12px 32px; border-radius: 6px; font-size: 15px; font-weight: 600;
+      cursor: pointer; border: none; transition: all 0.18s; text-decoration: none;
+    }
+    .btn-primary { background: #1B3A6B; color: #fff; }
+    .btn-primary:hover { background: #14305a; }
+    .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-secondary { background: transparent; color: #1B3A6B; border: 2px solid #1B3A6B; }
+    .btn-secondary:hover { background: #eef2ff; }
+    .btn-danger { background: transparent; color: #dc2626; border: 2px solid #dc2626; }
+    .btn-danger:hover { background: #fef2f2; }
+    .btn-row { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 36px; }
+    .btn-row.center { justify-content: center; }
+
+    /* Option cards */
+    .options-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .option-card {
+      border: 2px solid #dde3ef; border-radius: 10px; padding: 22px;
+      cursor: pointer; transition: all 0.18s; background: #fff; position: relative;
+    }
+    .option-card:hover:not(.disabled) { border-color: #1B3A6B; background: #f5f8ff; }
+    .option-card.selected { border-color: #1B3A6B; background: #eef2ff; }
+    .option-card.disabled { opacity: 0.38; cursor: not-allowed; pointer-events: none; background: #f9fafb; }
+    .option-label { font-size: 12px; font-weight: 700; color: #1B3A6B; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 10px; }
+    .option-text { font-size: 14.5px; color: #374151; line-height: 1.55; margin-bottom: 12px; }
+    .option-cost { font-size: 13.5px; font-style: italic; color: #6b7280; }
+    .insufficient-tag { font-size: 11.5px; color: #dc2626; font-weight: 600; margin-top: 8px; }
+
+    /* Slider */
+    .slider-block { margin: 20px 0 32px; }
+    .slider-display {
+      display: inline-block; background: #1B3A6B; color: #fff;
+      font-size: 30px; font-weight: 700; padding: 12px 28px;
+      border-radius: 8px; margin-bottom: 22px;
+    }
+    input[type=range].slider {
+      -webkit-appearance: none; appearance: none; width: 100%; height: 6px;
+      border-radius: 3px; background: #dde3ef; outline: none; cursor: pointer;
+    }
+    input[type=range].slider::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none; width: 22px; height: 22px; border-radius: 50%;
+      background: #1B3A6B; cursor: pointer; box-shadow: 0 2px 8px rgba(27,58,107,0.3);
+    }
+    .slider-labels { display: flex; justify-content: space-between; font-size: 12px; color: #9ca3af; margin-top: 6px; }
+    .slider-per-capita { font-size: 13px; color: #6b7280; margin-top: 10px; }
+
+    /* Report */
+    .report-header { text-align: center; margin-bottom: 28px; }
+    .report-title { font-size: 30px; font-weight: 700; color: #1B3A6B; }
+    .report-intro { font-size: 15px; color: #374151; line-height: 1.8; max-width: 820px; margin: 0 auto 36px; }
+    .chart-layout { display: flex; flex-wrap: wrap; gap: 32px; align-items: flex-start; margin-bottom: 32px; }
+    .chart-canvas-wrap { flex: 1; min-width: 280px; max-width: 460px; }
+    .gdp-breakdown { flex: 1; min-width: 260px; }
+    .gdp-total-box {
+      text-align: center; background: #1B3A6B; color: #fff;
+      border-radius: 10px; padding: 20px 32px; margin-bottom: 32px;
+      font-size: 22px; font-weight: 700;
+    }
+    .gdp-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid #f3f4f6; font-size: 14px; }
+    .gdp-label { display: flex; align-items: center; gap: 9px; color: #374151; }
+    .color-dot { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
+    .gdp-val { font-weight: 600; color: #1B3A6B; white-space: nowrap; }
+
+    /* Early end */
+    .early-badge {
+      display: inline-block; background: #dc2626; color: #fff;
+      font-size: 13px; font-weight: 700; padding: 6px 18px;
+      border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px;
+      margin-bottom: 20px;
+    }
+    .early-title { font-size: 28px; font-weight: 700; color: #dc2626; margin-bottom: 20px; line-height: 1.2; }
+
+    /* Modify table */
+    .modify-table { width: 100%; border-collapse: collapse; margin: 24px 0; }
+    .modify-table th {
+      text-align: left; padding: 11px 16px;
+      border-bottom: 2px solid #1B3A6B;
+      font-size: 12px; font-weight: 700; color: #1B3A6B; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .modify-table td { padding: 13px 16px; border-bottom: 1px solid #f0f2f8; font-size: 14.5px; color: #374151; vertical-align: top; }
+    .modify-table tr:hover td { background: #f8faff; }
+    .edit-btn {
+      padding: 5px 16px; border: 1.5px solid #1B3A6B; border-radius: 4px;
+      background: transparent; color: #1B3A6B; font-size: 13px; font-weight: 600;
+      cursor: pointer; white-space: nowrap;
+    }
+    .edit-btn:hover { background: #1B3A6B; color: #fff; }
+
+    /* Background page card */
+    .bg-card {
+      background: #f8faff; border-left: 4px solid #1B3A6B;
+      border-radius: 6px; padding: 28px 32px; margin-bottom: 24px;
+    }
+    .bg-subtitle { font-size: 18px; font-weight: 700; color: #1B3A6B; margin-bottom: 14px; }
+
+    /* Divider */
+    hr.divider { border: none; border-top: 1px solid #e5e7eb; margin: 28px 0; }
+
+    /* Remaining bar (secondary) */
+    .remaining-bar-wrap { background: #f3f4f6; border-radius: 8px; padding: 14px 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 16px; }
+    .remaining-bar-track { flex: 1; height: 8px; background: #dde3ef; border-radius: 4px; }
+    .remaining-bar-fill { height: 100%; background: #1B3A6B; border-radius: 4px; transition: width 0.4s; }
+    .remaining-bar-text { font-size: 13px; font-weight: 600; color: #1B3A6B; white-space: nowrap; }
+
+    /* Conditional note */
+    .note-box { background: #fff8e1; border: 1px solid #ffd54f; border-radius: 6px; padding: 14px 20px; font-size: 14px; color: #6d5900; margin-bottom: 24px; }
+
+    @media (max-width: 640px) {
+      .inner { padding: 100px 20px 60px; }
+      #sticky-header { padding: 8px 16px 0; }
+      .options-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Fixed header (hidden on landing) -->
+<div id="sticky-header" style="display:none">
+  <div class="header-row">
+    <img src="Test 1/FR-New-1-Plain.png" class="header-logo" alt="Fiscal Realities Economists">
+    <div class="funds-block">
+      <div class="funds-label">Remaining Funds</div>
+      <div class="funds-amount" id="hdr-funds">$100,000,000</div>
+    </div>
+  </div>
+  <div class="progress-track">
+    <div class="progress-fill" id="prog-fill"></div>
+  </div>
+</div>
+
+<div id="app"></div>
+
+<script>
+// ─────────────────────────────────────────────
+// CONSTANTS & DATA
+// ─────────────────────────────────────────────
+const TOTAL = 100_000_000;
+
+const DECISIONS = [
+  {
+    id: 1, type: 'slider', name: 'Per Capita Distributions',
+    title: '1. Per Capita Distributions',
+    body: 'How much will be provided in Per Capita Distributions (PCDs) to the 1,000 eligible members?',
+    min: 0, max: TOTAL, step: 500_000, gdpMult: 1.5
+  },
+  {
+    id: 2, type: 'choice', name: 'Land Purchase',
+    title: '2. Land Purchase',
+    body: `Reacquisition of lost lands has been clearly communicated as a top priority by the community. There are currently two potential land acquisition options available:<br><br>
+<strong>Land Option A</strong><br>
+There is a several-acre parcel within an urban centre. The parcel is currently undeveloped. There is existing commercial and light industrial development directly adjacent to the site within municipal jurisdiction. There is also residential development, within municipal jurisdiction, in reasonable proximity to the subject parcel. The First Nation believes it will be possible to negotiate a service agreement with the city to provide necessary water, wastewater, drainage, roads, fire and police protection, and other services to the site. The First Nation expects the process to add the parcel to its reserve land base to take at least five years. The cost to acquire the land, complete the ATR process, and negotiate a service agreement, including legal fees, is estimated to be about <strong>$10 million</strong>.<br><br>
+<strong>Land Option B</strong><br>
+There is a large tract of land in a very remote setting within the First Nation's traditional territory. There is no development on or adjacent to the land, but the land holds significant cultural significance to the First Nation. It is believed the ATR process could be completed in under two years. The estimated cost of the land acquisition and the work required to complete the ATR process is <strong>$2 million</strong>. This would enable Chief and Council to add land back sooner, thereby demonstrating important progress to the community sooner. This option is also significantly less expensive, leaving more resources for other community priorities.`,
+    options: [
+      { label: 'Response #1', text: 'Land Option A only because this one has much greater development potential. And it is consistent with the Nation\'s land acquisition and development strategy.', cost: 10_000_000 },
+      { label: 'Response #2', text: 'Land Option B only because this will be the fastest way to demonstrate to membership that a significant amount of land has been reacquired and added to reserve.', cost: 2_000_000 },
+      { label: 'Response #3', text: 'Both Land Option A and B because both are necessary to satisfy all community members.', cost: 12_000_000 },
+      { label: 'Response #4', text: 'Neither. It is preferred to wait for a better option to become available. Further, the ATR process likely has far too many challenges to overcome in a timely manner.', cost: 0 },
+    ]
+  },
+  {
+    id: 3, type: 'choice', name: 'Savings',
+    title: '3. Savings',
+    body: 'A portion of the settlement can be set aside for future generations, and placed in a trust. This money should be saved or invested in relatively low-risk financial instruments. In your Expenditure Profile, how much do you recommend is saved?',
+    options: [
+      { label: 'Response #1', text: '$50 million. Half should be saved for the future.', cost: 50_000_000 },
+      { label: 'Response #2', text: '$0. The benefits generated from spending the settlement on smart initiatives now will be greater than potential interest earnings if the money is invested in financial markets (especially if only invested in low-risk instruments).', cost: 0 },
+      { label: 'Response #3', text: '$25 million. One-quarter of the settlement should be saved for the future.', cost: 25_000_000 },
+    ]
+  },
+  {
+    id: 4, type: 'choice', name: 'Pay Off Debt',
+    title: '4. Pay Off Debt',
+    body: 'A portion of the settlement could be used to pay off outstanding debt. Using $5 million today to pay off existing debt, $3 million of high interest debt and $2 million of low interest debt, could potentially save the Nation around $200,000 per year in interest charges. This would include both high interest and low interest debt sources. Do you include this expense in your Recommended Expenditure Profile?',
+    options: [
+      { label: 'Response #1', text: 'Pay off all debt', cost: 5_000_000 },
+      { label: 'Response #2', text: 'Pay off high interest debt', cost: 3_000_000 },
+      { label: 'Response #3', text: 'Pay off low interest debt', cost: 2_000_000 },
+      { label: 'Response #4', text: 'Pay off no debt', cost: 0 },
+    ]
+  },
+  {
+    id: 5, type: 'choice', name: 'Education',
+    title: '5. Education',
+    body: 'The community has clearly stated that education is among their top priorities for settlement expenditures. The Education Department has presented a proposal before Chief and Council, requesting $1 million per year for five years to fully implement the proposal. The Education Department has said it can implement the first phase with only $500,000 per year for the next two years. How much of the settlement do you allocate to Education in your Expenditure Profile?',
+    options: [
+      { label: 'Response #1', text: 'No Investment', cost: 0 },
+      { label: 'Response #2', text: '$1 million for Phase 1 only, currently', cost: 1_000_000 },
+      { label: 'Response #3', text: '$5 million for the full proposal', cost: 5_000_000 },
+      { label: 'Response #4', text: '$10 million. Education is a critical investment. The Education Department should have all the resources they are seeking, plus more.', cost: 10_000_000 },
+    ]
+  },
+  {
+    id: 6, type: 'choice', name: 'Healthcare',
+    title: '6. Healthcare',
+    body: 'The community has clearly stated that Healthcare is among their top priorities for settlement expenditures. The Health Department has a proposal before Chief and Council, requesting $1 million per year over the next five years to fully implement the proposal. The first phase can be implemented with only $500,000 per year over the next two years. How much of the settlement do you allocate to Healthcare in your Expenditure Profile?',
+    options: [
+      { label: 'Response #1', text: 'No Investment', cost: 0 },
+      { label: 'Response #2', text: '$1 million for Phase 1 only, currently', cost: 1_000_000 },
+      { label: 'Response #3', text: '$5 million for the full proposal', cost: 5_000_000 },
+      { label: 'Response #4', text: '$10 million. Healthcare is a critical investment. The Health and Wellness Department should have all the resources they are seeking, plus more.', cost: 10_000_000 },
+    ]
+  },
+  {
+    id: 7, type: 'choice', name: 'Housing',
+    title: '7. Housing',
+    body: `The community has clearly stated that Housing is among their top priorities for the settlement. The Housing Department has a proposal before Chief and Council. The proposal has two parts:<ul>
+<li>A request for $5 million for the immediate construction of new housing units and major renovations to existing housing units; and</li>
+<li>A request for $1 million per year over the next ten years. This would be used for necessary health and safety repairs and renovations to existing units, and to improve ongoing operations and maintenance going forward, so existing units last longer.</li>
+</ul>How much of the settlement do you allocate to Housing in the Expenditure Profile?`,
+    options: [
+      { label: 'Response #1', text: 'No Investment', cost: 0 },
+      { label: 'Response #2', text: '$5 million only, currently', cost: 5_000_000 },
+      { label: 'Response #3', text: '$15 million for the full proposal', cost: 15_000_000 },
+      { label: 'Response #4', text: '$20 million. Housing is a critical investment. The Housing Department should have all the resources they are seeking, plus more.', cost: 20_000_000 },
+    ]
+  },
+  {
+    id: 8, type: 'choice', name: 'Economic Development',
+    title: '8. Economic Development',
+    body: `The First Nation has established a wholly owned arm's length economic development corporation to operate several Nation-owned businesses. The economic development corporation is seeking additional investment to grow and expand a few of the more successful enterprises. The request is for:<ul>
+<li>$10 million initial investment to purchase new equipment and build larger facilities; and</li>
+<li>An additional $2 million per year over five years. This would be for minor renovations to existing facilities, to gain access to improved distribution channels, for training for existing staff, small budget to hire additional seasonal workers, and resources to enable existing enterprises to respond quickly to regional opportunities.</li>
+</ul>How much of the settlement do you allocate to the Economic Development Corporation in your Recommended Expenditure Profile?`,
+    options: [
+      { label: 'Response #1', text: 'No Investment', cost: 0 },
+      { label: 'Response #2', text: '$10 million only, currently', cost: 10_000_000 },
+      { label: 'Response #3', text: '$20 million for the full proposal', cost: 20_000_000 },
+      { label: 'Response #4', text: '$30 million. Economic Development is a critical investment. The Economic Development Corporation should have all the resources they are seeking, plus more.', cost: 30_000_000 },
+    ]
+  },
+  {
+    id: 9, type: 'choice', name: 'Culture and Language',
+    title: '9. Culture and Language',
+    body: 'The community has clearly stated that Culture and Language are priorities for the settlement. The Culture and Heritage Department has a proposal before Chief and Council. The proposal includes a request for $250,000 per year for ten years for an annual cultural event and an additional $150,000 per year for ten years for a language initiative. Staff have indicated that a reduced version of both could be implemented as an interim step with a commitment of $250,000 for four years. How much of the settlement do you allocate to the Culture and Heritage Department in the Expenditure Profile?',
+    options: [
+      { label: 'Response #1', text: 'No Investment', cost: 0 },
+      { label: 'Response #2', text: '$1 million only, currently', cost: 1_000_000 },
+      { label: 'Response #3', text: '$4 million for the full proposal', cost: 4_000_000 },
+      { label: 'Response #4', text: '$10 million. Culture and language are critical investments. The Culture and Heritage Department should have all the resources they are seeking, plus more.', cost: 10_000_000 },
+    ]
+  },
+  {
+    id: 10, type: 'choice', name: 'Recreation',
+    title: '10. Recreation',
+    body: 'The community has clearly stated that Sports and Recreation are priorities for the settlement. There are currently no relevant proposals before Chief and Council, but interviews with staff indicate there may be two potential projects that have been talked about in the past. There are no formal cost estimates, but staff suggest that the construction of a multi-use recreation facility could be completed for $5 million. Staff have also suggested that a youth sports program could be offered with a commitment of $500,000 annually for five years. How much of the settlement do you allocate to the Community Services for recreation in the Expenditure Profile?',
+    options: [
+      { label: 'Response #1', text: 'No Investment', cost: 0 },
+      { label: 'Response #2', text: '$2.5 million for the youth sports program.', cost: 2_500_000 },
+      { label: 'Response #3', text: '$5 million for the recreation facility.', cost: 5_000_000 },
+      { label: 'Response #4', text: '$7.5 million for both projects.', cost: 7_500_000 },
+      { label: 'Response #5', text: '$10 million. Recreation is a critical investment. The Community Services Department should have plenty of resources.', cost: 10_000_000 },
+    ]
+  },
+  {
+    id: 11, type: 'choice', name: 'Police Service',
+    title: '11. Police Service',
+    body: 'The community has indicated that improved safety in the community and more effective policing are priorities for the settlement. The Police Department is seeking $2 million for new equipment and $500,000 per year over the next ten years to improve the community policing service. How much of the settlement do you allocate to the Police Department in your Expenditure Profile?',
+    options: [
+      { label: 'Response #1', text: 'No Investment', cost: 0 },
+      { label: 'Response #2', text: '$2 million for the new equipment.', cost: 2_000_000 },
+      { label: 'Response #3', text: '$5 million for the improved community policing service.', cost: 5_000_000 },
+      { label: 'Response #4', text: '$10 million. Policing is a critical investment. The Police Department should have all the resources they are seeking, plus more.', cost: 10_000_000 },
+    ]
+  },
+  {
+    id: 12, type: 'choice', name: 'Fire Protection',
+    title: '12. Fire Protection',
+    body: 'The community has indicated that improved safety in the community and better fire protection are priorities for the settlement. The Fire Department is seeking $2 million for new equipment and $500,000 per year over the next ten years to improve training and implement fire prevention initiatives. This would also include a fire protection law to support the implementation of First Nation jurisdiction. How much of the settlement do you allocate to the Fire Department in your Expenditure Profile?',
+    options: [
+      { label: 'Response #1', text: 'No Investment', cost: 0 },
+      { label: 'Response #2', text: '$2 million for the new equipment.', cost: 2_000_000 },
+      { label: 'Response #3', text: '$5 million for the improved training and fire prevention initiative.', cost: 5_000_000 },
+      { label: 'Response #4', text: '$10 million. Fire protection is a critical investment. The Fire Department should have all the resources they are seeking, plus more.', cost: 10_000_000 },
+    ]
+  },
+  {
+    id: 13, type: 'choice', name: 'Environmental Stewardship',
+    title: '13. Environmental Stewardship',
+    body: 'The community has indicated that environmental stewardship are priorities for the settlement. The Environmental Stewardship Branch of the Lands Department is seeking $2 million per year over the next ten years to implement several environmental management, sustainability, climate adaptation, and emergency response initiatives. This would include an environmental law to support the implementation of First Nation jurisdiction. How much of the settlement do you allocate to the Environmental Stewardship Branch in your Expenditure Profile?',
+    options: [
+      { label: 'Response #1', text: 'No Investment', cost: 0 },
+      { label: 'Response #2', text: '$10 million (half the requested amount), or $2 million per year, only over five years.', cost: 10_000_000 },
+      { label: 'Response #3', text: '$20 million', cost: 20_000_000 },
+      { label: 'Response #4', text: '$30 million. Environmental Stewardship is a critical investment. The Environmental Stewardship Branch should have all the resources they are seeking, plus more.', cost: 30_000_000 },
+    ]
+  },
+  {
+    id: 14, type: 'slider', name: 'Land Development at the Land Option A ATR Site',
+    title: '14. Land Development at the Land Option A ATR Site',
+    body: 'The community has indicated that creating economic opportunities, urban reserve development, and advancement of business on ATR lands are priorities for the settlement. Staff across multiple departments have been working in support of this vision for many years. Finalizing a master planning study, completing site preparation work, building and installing infrastructure to provide required services, and the construction and ongoing operations of several buildings will require an estimated investment of $20 million. This will implement the Framework Agreement on First Nations Land Management, to help speed up ATRs and facilitate member leasehold housing on ATR lands. How much of the settlement do you allocate to Urban Reserve Development in your Recommended Expenditure Profile?',
+    min: 0, step: 500_000, gdpMult: 20.0
+  }
+];
+
+// GDP multipliers per option index for choice decisions
+const GDP_MULTS = {
+  3:  [0.25, 0, 0.25],
+  4:  [0.85, 0.85, 0.85, 0],
+  5:  [0, 2.1, 2.1, 2.1],
+  6:  [0, 1.8, 1.8, 1.8],
+  7:  [0, 1.75, 1.75, 1.75],
+  8:  [0, 2.5, 2.5, 2.5],
+  9:  [0, 1.3, 1.3, 1.3],
+  10: [0, 1.6, 1.6, 1.6, 1.6],
+  11: [0, 1.2, 1.2, 1.2],
+  12: [0, 1.2, 1.2, 1.2],
+  13: [0, 1.4, 1.4, 1.4],
+};
+
+const CHART_COLORS = [
+  '#4e79a7','#f28e2b','#59a14f','#7b5ea7',
+  '#ff9da7','#76b7b2','#86bcb6','#e15759',
+  '#b07aa1','#edc948','#9c755f','#bab0ac',
+  '#d37295','#8b7355'
+];
+
+// ─────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────
+let state = {
+  page: 'landing',
+  decisions: {}   // id -> choiceIndex (int) or amount (number)
+};
+
+let _chart = null;
+
+// ─────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────
+function fmt(n) {
+  return '$' + Math.round(n).toLocaleString('en-CA');
+}
+
+function dec(id) { return DECISIONS.find(d => d.id === id); }
+
+function getCost(id, val) {
+  if (val === null || val === undefined) return 0;
+  const d = dec(id);
+  if (!d) return 0;
+  return d.type === 'slider' ? val : d.options[val].cost;
+}
+
+function totalSpent() {
+  let s = 0;
+  for (const [id, val] of Object.entries(state.decisions)) {
+    s += getCost(+id, val);
+  }
+  return s;
+}
+
+function remaining() { return TOTAL - totalSpent(); }
+
+function availableFor(decId) {
+  let s = 0;
+  for (const [id, val] of Object.entries(state.decisions)) {
+    if (+id !== decId) s += getCost(+id, val);
+  }
+  return TOTAL - s;
+}
+
+function hasLandA() {
+  const v = state.decisions[2];
+  return v === 0 || v === 2; // Response #1 (A only) or #3 (Both)
+}
+
+function getGDP(id) {
+  const val = state.decisions[id];
+  if (val === null || val === undefined) return 0;
+  const d = dec(id);
+  if (!d) return 0;
+
+  if (d.type === 'slider') return val * d.gdpMult;
+
+  if (id === 2) {
+    if (val === 0) return 10_000_000 * 1.3;
+    if (val === 1) return 2_000_000 * 0.5;
+    if (val === 2) return 10_000_000 * 1.3 + 2_000_000 * 0.5;
+    return 0;
+  }
+
+  const m = GDP_MULTS[id];
+  return m ? getCost(id, val) * m[val] : 0;
+}
+
+function allGDP() {
+  let results = [], total = 0;
+  for (const d of DECISIONS) {
+    if (d.id === 14 && !hasLandA()) continue;
+    const g = getGDP(d.id);
+    const c = getCost(d.id, state.decisions[d.id]);
+    if (c > 0 || g > 0) {
+      const idx = DECISIONS.indexOf(d);
+      results.push({ name: d.name, gdp: g, colorIdx: idx });
+      total += g;
+    }
+  }
+  return { results, total };
+}
+
+// ─────────────────────────────────────────────
+// NAVIGATION
+// ─────────────────────────────────────────────
+const PAGE_SEQ = ['landing','background','d1','d2','d3','d4','d5','d6','d7','d8','d9','d10','d11','d12','d13','d14','report'];
+
+function nextPage(cur) {
+  if (cur === 'd1') {
+    const v = state.decisions[1];
+    return (v !== undefined && v !== null && v < 10_000_000) ? 'early-end' : 'd2';
+  }
+  if (cur === 'd13') return hasLandA() ? 'd14' : 'report';
+  if (cur === 'd14') return 'report';
+  const i = PAGE_SEQ.indexOf(cur);
+  return PAGE_SEQ[i + 1] || 'report';
+}
+
+function prevPage(cur) {
+  if (cur === 'report') return hasLandA() ? 'd14' : 'd13';
+  const i = PAGE_SEQ.indexOf(cur);
+  return i > 0 ? PAGE_SEQ[i - 1] : 'landing';
+}
+
+function navigate(p) {
+  state.page = p;
+  render();
+}
+
+function goBack() { navigate(prevPage(state.page)); }
+
+// ─────────────────────────────────────────────
+// RENDER DISPATCH
+// ─────────────────────────────────────────────
+function render() {
+  const hdr = document.getElementById('sticky-header');
+  const app = document.getElementById('app');
+  const isLanding = state.page === 'landing';
+
+  hdr.style.display = isLanding ? 'none' : 'block';
+
+  if (!isLanding) {
+    document.getElementById('hdr-funds').textContent = fmt(remaining());
+    const decPages = ['d1','d2','d3','d4','d5','d6','d7','d8','d9','d10','d11','d12','d13','d14'];
+    const total = hasLandA() ? 14 : 13;
+    const idx = decPages.indexOf(state.page);
+    const pct = state.page === 'report' ? 100 : (idx >= 0 ? ((idx + 1) / total) * 100 : 0);
+    document.getElementById('prog-fill').style.width = pct + '%';
+  }
+
+  if (_chart) { _chart.destroy(); _chart = null; }
+
+  if (state.page === 'landing')     app.innerHTML = renderLanding();
+  else if (state.page === 'background') app.innerHTML = renderBackground();
+  else if (state.page === 'early-end')  app.innerHTML = renderEarlyEnd();
+  else if (state.page === 'report')     app.innerHTML = renderReport();
+  else if (state.page === 'modify')     app.innerHTML = renderModify();
+  else if (state.page.startsWith('d'))  app.innerHTML = renderDecision(parseInt(state.page.slice(1)));
+
+  window.scrollTo(0, 0);
+
+  // Post-render init
+  if (state.page === 'report' || state.page === 'early-end') initChart();
+  if (state.page.startsWith('d')) {
+    const d = dec(parseInt(state.page.slice(1)));
+    if (d && d.type === 'slider') initSlider(d.id);
+  }
+}
+
+// ─────────────────────────────────────────────
+// PAGE RENDERERS
+// ─────────────────────────────────────────────
+function renderLanding() {
+  return `
+  <div class="landing-wrap">
+    <img src="Test 1/FR-New-1-Plain.png" class="landing-logo" alt="Fiscal Realities Economists">
+    <h1 class="game-title">Maximising the Economic Impacts of Specific Claims Settlements</h1>
+    <p class="intro-text">A historic $100 million specific claims settlement is on the table — but how it is used will shape the Nation's future for generations. As an advisor to Chief and Council, you must design a strategic, balanced spending plan that reflects community priorities and creates lasting impacts.</p>
+    <button class="btn btn-primary" onclick="navigate('background')">Start Game</button>
+  </div>`;
+}
+
+function renderBackground() {
+  return `
+  <div class="inner">
+    <div class="bg-card">
+      <div class="bg-subtitle">Background</div>
+      <p class="page-body">The only direction you have been given by Chief and Council is that your decisions should seek to maximize community benefits. In practice, this means designing an expenditure plan that delivers the highest potential value for the Nation. Chief and Council want to ensure that, when questioned by members, governments, or outside observers, they can defend the expenditure plan as the best use of settlement resources to improve the Nation's well-being and economic success.</p>
+      <p class="page-body">You must weigh the trade-offs, consider the priorities voiced by the community, and decide which expenditures will most effectively increase the Nation's collective benefits and overall prosperity for years to come.</p>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goBack()">Back</button>
+      <button class="btn btn-primary" onclick="navigate('d1')">Continue</button>
+    </div>
+  </div>`;
+}
+
+function renderDecision(id) {
+  const d = dec(id);
+  if (!d) return '';
+  return d.type === 'slider' ? renderSliderPage(d) : renderChoicePage(d);
+}
+
+function renderSliderPage(d) {
+  const avail = availableFor(d.id);
+  const maxVal = d.id === 14 ? avail : d.max;
+  const cur = Math.min(state.decisions[d.id] ?? 0, maxVal);
+
+  const pct = maxVal > 0 ? (cur / maxVal) * 100 : 0;
+  const perCapita = d.id === 1 ? `<div class="slider-per-capita">Per capita: ${fmt(cur / 1000)} per eligible member</div>` : '';
+  const note = d.id === 14
+    ? `<div class="note-box">This decision is only available because you selected <strong>Land Option A</strong>. The maximum you can invest is limited to your remaining available funds (${fmt(maxVal)}).</div>`
+    : '';
+
+  return `
+  <div class="inner">
+    <div class="page-title">${d.title}</div>
+    <div class="page-body">${d.body}</div>
+    ${note}
+    <div class="slider-block">
+      <div><span class="slider-display" id="slide-disp">${fmt(cur)}</span></div>
+      ${perCapita}
+      <br>
+      <input type="range" class="slider" id="main-slider" min="0" max="${maxVal}" step="${d.step}" value="${cur}">
+      <div class="slider-labels"><span>$0</span><span>${fmt(maxVal)}</span></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goBack()">Back</button>
+      <button class="btn btn-primary" onclick="sliderNext(${d.id})">Continue</button>
+    </div>
+  </div>`;
+}
+
+function initSlider(id) {
+  const slider = document.getElementById('main-slider');
+  const disp = document.getElementById('slide-disp');
+  if (!slider) return;
+  slider.addEventListener('input', () => {
+    const v = parseInt(slider.value);
+    state.decisions[id] = v;
+    disp.textContent = fmt(v);
+    document.getElementById('hdr-funds').textContent = fmt(remaining());
+    if (id === 1) {
+      const pc = document.querySelector('.slider-per-capita');
+      if (pc) pc.textContent = `Per capita: ${fmt(v / 1000)} per eligible member`;
+    }
+  });
+}
+
+function sliderNext(id) {
+  const slider = document.getElementById('main-slider');
+  if (slider) state.decisions[id] = parseInt(slider.value);
+  navigate(nextPage(state.page));
+}
+
+function renderChoicePage(d) {
+  const avail = availableFor(d.id);
+  const cur = state.decisions[d.id];
+
+  const cards = d.options.map((opt, i) => {
+    const canAfford = opt.cost <= avail;
+    const sel = cur === i;
+    let cls = 'option-card';
+    if (sel) cls += ' selected';
+    if (!canAfford) cls += ' disabled';
+    return `
+      <div class="${cls}" onclick="pickChoice(${d.id},${i})">
+        <div class="option-label">${opt.label}</div>
+        <div class="option-text">${opt.text}</div>
+        <div class="option-cost">Cost: ${fmt(opt.cost)}</div>
+        ${!canAfford ? '<div class="insufficient-tag">Insufficient funds</div>' : ''}
+      </div>`;
+  }).join('');
+
+  const canContinue = cur !== null && cur !== undefined;
+
+  return `
+  <div class="inner">
+    <div class="page-title">${d.title}</div>
+    <div class="page-body">${d.body}</div>
+    <div class="options-grid">${cards}</div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goBack()">Back</button>
+      <button class="btn btn-primary" ${canContinue ? '' : 'disabled'} onclick="choiceNext(${d.id})">Continue</button>
+    </div>
+  </div>`;
+}
+
+function pickChoice(id, i) {
+  state.decisions[id] = i;
+  document.getElementById('hdr-funds').textContent = fmt(remaining());
+  // Re-render only the cards portion
+  const app = document.getElementById('app');
+  app.innerHTML = renderDecision(id);
+}
+
+function choiceNext(id) {
+  if (state.decisions[id] === null || state.decisions[id] === undefined) return;
+  navigate(nextPage(state.page));
+}
+
+// ─────────────────────────────────────────────
+// REPORT
+// ─────────────────────────────────────────────
+function renderReport() {
+  const { results, total } = allGDP();
+  const spent = totalSpent();
+  const rem = TOTAL - spent;
+
+  const breakdown = results.map(r => `
+    <div class="gdp-row">
+      <div class="gdp-label">
+        <div class="color-dot" style="background:${CHART_COLORS[r.colorIdx]}"></div>
+        ${r.name}
+      </div>
+      <div class="gdp-val">${fmt(r.gdp)}</div>
+    </div>`).join('');
+
+  const spendRows = DECISIONS.filter(d => {
+    if (d.id === 14 && !hasLandA()) return false;
+    const v = state.decisions[d.id];
+    return v !== null && v !== undefined && getCost(d.id, v) > 0;
+  }).map(d => {
+    const v = state.decisions[d.id];
+    const cost = getCost(d.id, v);
+    return `<div class="gdp-row"><div class="gdp-label">${d.name}</div><div class="gdp-val">${fmt(cost)}</div></div>`;
+  }).join('');
+
+  return `
+  <div class="inner">
+    <div class="report-header">
+      <div class="report-title">Report</div>
+    </div>
+    <p class="report-intro">Congratulations! You have successfully completed your expenditure profile. The pie chart below reports the results of your decisions, in economic terms. It reports the Gross Domestic Product (GDP) impacts of your expenditure decisions, reflected in total GDP at market prices. As you can see, the allocation of specific claims expenditures across available categories will greatly impact the amount of GDP generated, by and for the Nation. These benefits will flow to the community in employment opportunities, income, fiscal growth, and expanded access to services. If you would like a second chance at maximizing the economic impacts of the specific claims settlement by proposing a modified expenditure profile, hit the button below.</p>
+
+    <div class="gdp-total-box">TOTAL GDP at Market Prices: ${fmt(total)}</div>
+
+    <div class="chart-layout">
+      <div class="chart-canvas-wrap">
+        <canvas id="report-chart"></canvas>
+      </div>
+      <div class="gdp-breakdown">
+        <strong style="font-size:13px;text-transform:uppercase;letter-spacing:0.5px;color:#6b7280;">GDP by Category</strong>
+        <div style="margin-top:10px">${breakdown}</div>
+      </div>
+    </div>
+
+    <hr class="divider">
+    <strong style="font-size:13px;text-transform:uppercase;letter-spacing:0.5px;color:#6b7280;">Your Expenditure Summary</strong>
+    <div style="margin-top:10px;margin-bottom:8px">${spendRows}</div>
+    <div class="gdp-row" style="font-weight:700">
+      <div>Total Allocated</div><div class="gdp-val">${fmt(spent)}</div>
+    </div>
+    <div class="gdp-row">
+      <div style="color:#6b7280">Unallocated</div><div class="gdp-val" style="color:#6b7280">${fmt(rem)}</div>
+    </div>
+
+    <div class="btn-row center" style="margin-top:40px">
+      <button class="btn btn-secondary" onclick="navigate('modify')">Modify Expenditures</button>
+      <button class="btn btn-primary" onclick="navigate('modify')">A Second Chance</button>
+    </div>
+  </div>`;
+}
+
+// ─────────────────────────────────────────────
+// EARLY END
+// ─────────────────────────────────────────────
+function renderEarlyEnd() {
+  const pcd = state.decisions[1] || 0;
+  const gdp = pcd * 1.5;
+  return `
+  <div class="inner" style="text-align:center">
+    <div class="early-badge">Game Over</div>
+    <h2 class="early-title">Settlement Not Ratified by Community Vote</h2>
+    <p class="page-body" style="max-width:680px;margin:0 auto 32px">The per capita distribution amount you selected (${fmt(pcd)}) was below the $10,000,000 minimum required for community ratification. The settlement was rejected. The economic impact below reflects only the GDP generated by the per capita distribution amount proposed.</p>
+    <div class="gdp-total-box" style="max-width:480px;margin:0 auto 32px">GDP Impact from Per Capita Distributions: ${fmt(gdp)}</div>
+    <div style="max-width:420px;margin:0 auto 32px">
+      <canvas id="report-chart"></canvas>
+    </div>
+    <p style="font-size:13px;color:#6b7280;margin-bottom:32px">To maximize community benefits, try again with a higher per capita distribution amount.</p>
+    <div class="btn-row center">
+      <button class="btn btn-primary" onclick="retryFromD1()">A Second Chance</button>
+    </div>
+  </div>`;
+}
+
+function retryFromD1() {
+  state.decisions = {};
+  navigate('d1');
+}
+
+// ─────────────────────────────────────────────
+// CHART INIT
+// ─────────────────────────────────────────────
+function initChart() {
+  const canvas = document.getElementById('report-chart');
+  if (!canvas) return;
+
+  let labels, data, colors;
+
+  if (state.page === 'early-end') {
+    const pcd = state.decisions[1] || 0;
+    labels = ['Per Capita Distributions'];
+    data = [pcd * 1.5];
+    colors = [CHART_COLORS[0]];
+  } else {
+    const { results } = allGDP();
+    labels = results.map(r => r.name);
+    data = results.map(r => r.gdp);
+    colors = results.map(r => CHART_COLORS[r.colorIdx]);
+  }
+
+  _chart = new Chart(canvas, {
+    type: 'pie',
+    data: {
+      labels,
+      datasets: [{
+        data,
+        backgroundColor: colors,
+        borderColor: '#fff',
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: 'right',
+          labels: { font: { size: 12 }, padding: 14, boxWidth: 14 }
+        },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${fmt(ctx.parsed)}`
+          }
+        }
+      }
+    }
+  });
+}
+
+// ─────────────────────────────────────────────
+// MODIFY PAGE
+// ─────────────────────────────────────────────
+function renderModify() {
+  const rows = DECISIONS.map(d => {
+    if (d.id === 14 && !hasLandA()) return '';
+    const val = state.decisions[d.id];
+    let alloc = '<span style="color:#9ca3af;font-style:italic">Not set</span>';
+    if (val !== null && val !== undefined) {
+      if (d.type === 'slider') {
+        alloc = fmt(val);
+      } else {
+        alloc = `<strong>${d.options[val].label}</strong> &mdash; ${fmt(d.options[val].cost)}`;
+      }
+    }
+    return `
+      <tr>
+        <td>${d.title}</td>
+        <td>${alloc}</td>
+        <td><button class="edit-btn" onclick="editDecision(${d.id})">Edit</button></td>
+      </tr>`;
+  }).join('');
+
+  return `
+  <div class="inner">
+    <div class="page-title">Modify Expenditures</div>
+    <p class="page-body">Review your decisions below. Click <strong>Edit</strong> to return to any decision and change your selection. When finished, view your updated report.</p>
+    <table class="modify-table">
+      <thead>
+        <tr><th>Decision</th><th>Current Allocation</th><th></th></tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="navigate('report')">Back to Report</button>
+      <button class="btn btn-primary" onclick="navigate('report')">View Updated Report</button>
+    </div>
+  </div>`;
+}
+
+function editDecision(id) {
+  navigate('d' + id);
+}
+
+// ─────────────────────────────────────────────
+// BOOT
+// ─────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
