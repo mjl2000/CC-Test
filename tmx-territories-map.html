@@ -100,6 +100,12 @@
   .proposed-label { font-size: 10.5px; fill: #7a4e00; font-weight: 600; }
   .river-dot { fill: #fff; stroke: var(--text-muted); stroke-width: 1.3; }
   .dispute-dot { fill: var(--critical); stroke: #fff; stroke-width: 1; }
+  .fn-marker { stroke: #fff; stroke-width: 1; cursor: pointer; }
+  .fn-marker.fn-mba { fill: #1a8a3a; }
+  .fn-marker.fn-litigated { fill: #c23b3b; }
+  .fn-marker.fn-mixed { fill: #c98500; }
+  .fn-marker.fn-unclear { fill: #898781; }
+  .fn-key-dot { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:4px; vertical-align:middle; }
   .map-label { font-size: 11px; fill: var(--text-secondary); font-style: italic; }
   .legend { border: 1px solid var(--border); border-radius: 10px; background: var(--surface-1); padding: 12px 14px; }
   .legend h2 { font-size: 0.95rem; margin: 0 0 8px; }
@@ -200,17 +206,17 @@
   </div>
 
   <footer>
-    <p><strong>Methodology:</strong> Coastline, the Alberta&ndash;BC border, major rivers (Fraser, Athabasca, North Saskatchewan, Columbia) and select lakes are real, simplified boundary/hydrography data from Natural Earth (1:50m cultural &amp; physical vectors), clipped and lightly decimated for this map, not hand-approximated. Pipeline waypoints are drawn from Trans Mountain's 2013 CER/NEB Project Description, CER pipeline-profile and watercourse-crossing records, and corroborating news/encyclopedic sources. Territory polygons are schematic areas anchored to specific landmarks each Nation's own materials, BC Environmental Assessment Office consultation appendices, CER filings, or court records associate with their territory (e.g. Squamish's own site names Howe Sound, Whistler, and Burrard Inlet); landmark coordinates were independently geocoded, not estimated by eye. The full-territory shapes with a cited area figure (SSN ~12,500 km&sup2;, Squamish ~6,732 km&sup2;, Tsleil-Waututh ~1,865 km&sup2;, Musqueam ~5,330 km&sup2;) are uniformly scaled about their centroid to match that figure, then rendered as a smoothed curve through the landmark vertices rather than a hard-edged polygon, so the shape reads as an approximate zone rather than a surveyed boundary; the five corridor bands (Treaty 6, Aseniwuche Winewak, Simpcw, Nlaka'pamux, St&oacute;:l&#333;) are drawn at a fixed width along the relevant valley/corridor and are not area-matched, since they represent a travel corridor rather than a full territorial outline. Rather than one blended "Secw&eacute;pemc territory" shape, this map breaks the Secw&eacute;pemc-related claims apart by source: Simpcw's own North Thompson valley territory (its own cited hectare figure); Stk'emlupsemc te Secw&eacute;pemc Nation's (SSN's) own 2015, ~1.25-million-hectare title claim centred on Kamloops (filled); and the separate, broader Dec. 2003 BC Supreme Court joint title claim by Adams Lake, Bonaparte, High Bar, Neskonlith, Simpcw, Spallumcheen, and Whispering Pines (dashed outline, since its landmark description is coarser and was not independently verified beyond four named places). These three overlap in places by design; that is what the source record actually shows; it is not one Secw&eacute;pemc Nation boundary drawn three times. No portion of this map should be read as an official or legal statement of any Nation's territory. The proposed West Coast Oil Pipeline (Bruderheim to Roberts Bank) is unapproved as of August 2026; its route, terminal design, and Indigenous consultation process are all still pending, so its line and markers should be read as illustrative of the publicly reported corridor, not a finalized alignment.</p>
+    <p><strong>Methodology:</strong> Coastline, the Alberta&ndash;BC border, major rivers (Fraser, Athabasca, North Saskatchewan, Columbia) and select lakes are real, simplified boundary/hydrography data from Natural Earth (1:50m cultural &amp; physical vectors), clipped and lightly decimated for this map, not hand-approximated. Pipeline waypoints are drawn from Trans Mountain's 2013 CER/NEB Project Description, CER pipeline-profile and watercourse-crossing records, and corroborating news/encyclopedic sources. Territory polygons are schematic areas anchored to specific landmarks each Nation's own materials, BC Environmental Assessment Office consultation appendices, CER filings, or court records associate with their territory (e.g. Squamish's own site names Howe Sound, Whistler, and Burrard Inlet); landmark coordinates were independently geocoded, not estimated by eye. The full-territory shapes with a cited area figure (SSN ~12,500 km&sup2;, Squamish ~6,732 km&sup2;, Tsleil-Waututh ~1,865 km&sup2;, Musqueam ~5,330 km&sup2;) are uniformly scaled about their centroid to match that figure, then rendered as a smoothed curve through the landmark vertices rather than a hard-edged polygon, so the shape reads as an approximate zone rather than a surveyed boundary; the five corridor bands (Enoch Cree Nation, Aseniwuche Winewak, Simpcw, Coldwater Indian Band, St&oacute;:l&#333;) are drawn at a fixed width along the relevant valley/corridor and are not area-matched, since they represent a travel corridor rather than a full territorial outline. Rather than one blended "Secw&eacute;pemc territory" shape, this map breaks the Secw&eacute;pemc-related claims apart by source: Simpcw's own North Thompson valley territory (its own cited hectare figure); Stk'emlupsemc te Secw&eacute;pemc Nation's (SSN's) own 2015, ~1.25-million-hectare title claim centred on Kamloops (filled); and the separate, broader Dec. 2003 BC Supreme Court joint title claim by Adams Lake, Bonaparte, High Bar, Neskonlith, Simpcw, Spallumcheen, and Whispering Pines (dashed outline, since its landmark description is coarser and was not independently verified beyond four named places). These three overlap in places by design; that is what the source record actually shows; it is not one Secw&eacute;pemc Nation boundary drawn three times. The St&oacute;:l&#333; zone stays a single blended shape deliberately: unlike the other groupings on this map, the St&oacute;:l&#333; Collective genuinely did negotiate TMX consultation as one body, so blending them is the accurate choice, not a simplification. The former "Treaty 6 Nations" and "Nlaka'pamux / Scw'exmx Tribal Council" zones were each narrowed to a single flagship band (Enoch Cree Nation; Coldwater Indian Band) because research showed neither group negotiated collectively: every other named band in each area reached its own separate, individually documented outcome, so a shared zone would have misrepresented how these Nations actually engaged with the project. Those individually-documented bands (14 in total, across Treaty 6, Nlaka'pamux/Scw'exmx, and the Secw&eacute;pemc 2003 claim) are shown as status-colored point markers rather than shapes, since the record supports a specific reserve location and a specific TMX position for each but not a described territorial extent; a marker's color follows its documented status (agreement, opposition, mixed, or no documented position) and is clickable for full sourcing. Bonaparte Indian Band and Splatsin First Nation were researched individually and excluded from the markers: both are confirmed not to be crossed by the pipeline route and had no documented MBA, litigation, or TMX-specific statement. High Bar First Nation was also considered but is not shown, since no data on it was retrieved before this research session hit a usage limit; that gap is disclosed here rather than filled with a guess. No portion of this map should be read as an official or legal statement of any Nation's territory. The proposed West Coast Oil Pipeline (Bruderheim to Roberts Bank) is unapproved as of August 2026; its route, terminal design, and Indigenous consultation process are all still pending, so its line and markers should be read as illustrative of the publicly reported corridor, not a finalized alignment.</p>
 
     <details>
       <summary>Sources by region</summary>
       <ul>
         <li><strong>Basemap:</strong> Natural Earth 1:50m Admin-1 States/Provinces, Rivers &amp; Lake Centerlines, Lakes (naturalearthdata.com, public domain, via the nvkelso/natural-earth-vector mirror).</li>
         <li><strong>Route &amp; geography:</strong> CER REGDOCS Project Description (apps.neb-one.gc.ca); CER Pipeline Profiles (apps.cer-rec.gc.ca); Wikipedia: Trans Mountain pipeline, Yellowhead Pass; CBC on the 2021 Coldwater/Coquihalla shutdown.</li>
-        <li><strong>Edmonton/Treaty 6 area:</strong> Canada.ca / CBC on Enoch Cree Nation's 2018 TMX blessing ceremony; Enoch Cree Nation, Alexander First Nation, Alexis Nakota Sioux Nation official sites; Western Indigenous Pipeline Group.</li>
+        <li><strong>Edmonton/Treaty 6 area:</strong> Canada.ca / CBC on Enoch Cree Nation's 2018 TMX blessing ceremony; Trans Mountain's Oct. 2014 announcement of Paul First Nation's mutual benefits agreement; Enoch Cree Nation, Alexander First Nation, Alexis Nakota Sioux Nation official sites; CBC on the Iron Coalition; Western Indigenous Pipeline Group.</li>
         <li><strong>Jasper / Aseniwuche Winewak:</strong> Aseniwuche Winewak Nation official site; Parks Canada Indigenous-connections page for Jasper NP; Global News &amp; CBC on 2023&ndash;24 Jasper access calls; MONTECRISTO Magazine on Simpcw&ndash;Stoney&ndash;AWN dynamics.</li>
-        <li><strong>Simpcw, SSN &amp; the 2003 joint claim:</strong> Simpcw First Nation official site (territory description &amp; hectare figure); APTN "Travelling the pipeline"; Business in Vancouver; Stk'emlupsemc te Secw&eacute;pemc Nation (tkemlups.ca); Daily Hive (2015) on SSN's 2015 title-claim perimeter; IndigiNews &amp; The Tyee on the P&iacute;psell/Jacko Lake dispute (2023&ndash;24); Radio NL; Media Co-op (Kukpi7 Judy Wilson, Neskonlith); APTN on Tiny House Warriors; Shuswap Nation Tribal Council's Secwepemc Nation Unity Declaration (2012, shuswapnation.org); BC government First Nations A&ndash;Z listing for the 2003 BC Supreme Court joint title claim.</li>
-        <li><strong>Nlaka'pamux / Scw'exmx / Coldwater:</strong> Coldwater Indian Band v. Canada, 2017 FCA 199; Coldwater Indian Band v. Canada (AG), 2020 FCA 34; Scw'exmx Tribal Council (scwexmxtribal.com); Radio NL on the 2021 West Alternate Route; CBC on the Condition 39 aquifer report.</li>
+        <li><strong>Simpcw, SSN &amp; the 2003 joint claim:</strong> Simpcw First Nation official site (territory description &amp; hectare figure); APTN "Travelling the pipeline"; Business in Vancouver; Stk'emlupsemc te Secw&eacute;pemc Nation (tkemlups.ca); Daily Hive (2015) on SSN's 2015 title-claim perimeter; IndigiNews &amp; The Tyee on the P&iacute;psell/Jacko Lake dispute (2023&ndash;24); Radio NL; Media Co-op (Kukpi7 Judy Wilson, Neskonlith); CFJC Today on Whispering Pines/Clinton's MBA and equity pursuit; APTN on Tiny House Warriors; Shuswap Nation Tribal Council's Secwepemc Nation Unity Declaration (2012, shuswapnation.org); BC government First Nations A&ndash;Z listing for the 2003 BC Supreme Court joint title claim.</li>
+        <li><strong>Nlaka'pamux / Scw'exmx / Coldwater:</strong> Coldwater Indian Band v. Canada, 2017 FCA 199; Coldwater Indian Band v. Canada (AG), 2020 FCA 34; Scw'exmx Tribal Council (scwexmxtribal.com); Radio NL on the 2021 West Alternate Route and the Oct. 2020 eight-band reroute agreement (Coldwater, Boston Bar, Cook's Ferry, Nooaitch, Shackan, Siska, Spuzzum, Upper Nicola); World Pipelines on Upper Nicola's Nov. 2019 agreement; Lower Nicola Indian Band's public Q&amp;A; CBC on the Condition 39 aquifer report; BC EAO consultation records on Boston Bar's territorial crossing.</li>
         <li><strong>St&oacute;:l&#333; / Fraser Valley:</strong> BC EAO TMX Consultation &amp; Accommodation Report, Appendices C.7&ndash;C.19 (Chawathil, Cheam, Matsqui, Kwantlen, Katzie, St&oacute;:l&#333; Collective); CBC on Sumas First Nation (Lightning Rock, 2020 spill); local news on Katzie's Feb. 2023 stop-work order.</li>
         <li><strong>Burrard Inlet terminus:</strong> Tsleil-Waututh Nation, Squamish Nation, Musqueam Indian Band official sites (each names its own landmark extent); Tsleil-Waututh Nation v. Canada (AG), 2018 FCA 153; Coldwater First Nation v. Canada (AG), 2020 FCA 34; CBC / RCAANC on the 2025 Musqueam Rights Recognition Agreement.</li>
         <li><strong>Proposed West Coast Oil Pipeline (2026):</strong> PM news release (July 2, 2026, pm.gc.ca); Alberta government project page (alberta.ca/west-coast-oil-pipeline) and its plain-language MPO submission; Canada Gazette notice (Aug. 1, 2026); CBC, Daily Hive, The Narwhal, BNN Bloomberg, Globe and Mail, National Observer reporting on route, cost, and Indigenous response; Tsawwassen First Nation's official statement (tsawwassenfirstnation.com); Union of BC Indian Chiefs' Aug. 9, 2026 letter.</li>
@@ -372,15 +378,78 @@
     tsawwassenFN:      {lat:49.036, lon:-123.106},
     robertsBank:       {lat:49.054, lon:-123.118},
     boundaryBay:       {lat:49.02,  lon:-122.92},
-    pointRoberts:      {lat:48.98,  lon:-123.08}
+    pointRoberts:      {lat:48.98,  lon:-123.08},
+    coldwater:         {lat:50.033, lon:-120.863},
+    alexanderFN:       {lat:53.811, lon:-113.956},
+    alexisNakotaSioux: {lat:53.737, lon:-114.523},
+    upperNicola:       {lat:50.160, lon:-120.291},
+    lowerNicola:       {lat:50.155, lon:-120.879},
+    nooaitch:          {lat:50.190, lon:-121.058},
+    shackan:           {lat:50.289, lon:-121.199},
+    cooksFerry:        {lat:50.498, lon:-121.279},
+    siska:             {lat:50.135, lon:-121.571},
+    spuzzum:           {lat:49.690, lon:-121.414},
+    neskonlith:        {lat:50.767, lon:-119.745},
+    adamsLake:         {lat:50.819, lon:-119.686},
+    whisperingPines:   {lat:50.987, lon:-120.245}
   };
 
+  /* Individual First Nations shown as point markers rather than filled/outline
+     zones: each has a specific documented reserve location and TMX position,
+     but not the kind of described territorial extent that justifies drawing
+     a shape. Color follows documented status, not identity, matching the
+     "mba / litigated / mixed / unclear" language used in the legend chips. */
+  const FIRST_NATION_MARKERS = [
+    {name:"Paul First Nation (Wabamun)", lat:53.55, lon:-114.46, status:"mba",
+     detail:"Signed a mutual benefits agreement with Kinder Morgan, announced Oct. 23, 2014, one of the earliest on the project; its reserve is on Wabamun Lake, directly on the pipeline's path. Chief Casey Bird and Kinder Morgan Canada announced the agreement together.",
+     sources:[["Trans Mountain, Oct. 23, 2014 announcement","https://www.transmountain.com/news/paul-first-nation-and-kinder-morgan-canada-sign-mutual-benefits-agreement"]]},
+    {name:"Alexander First Nation", lat:53.811, lon:-113.956, status:"unclear",
+     detail:"A Treaty 6 Nation north of Edmonton and a regional TMX consultation stakeholder; no individually documented mutual benefits agreement, litigation, or public statement specific to the project was found in this research.",
+     sources:[["Alexander First Nation, official site","https://www.alexanderfn.com/about"]]},
+    {name:"Alexis Nakota Sioux Nation", lat:53.737, lon:-114.523, status:"unclear",
+     detail:"A Treaty 6 Nation northwest of Edmonton; Chief Tony Alexis has led Alberta-wide Indigenous-ownership initiatives (Iron Coalition, Nesika) seeking a stake in TMX, but no individually documented MBA or litigation specific to Alexis Nakota Sioux's own reserve was found.",
+     sources:[["CBC on Iron Coalition","https://www.cbc.ca/news/canada/calgary/trans-mountain-pipeline-bidder-first-nations-1.5163282"]]},
+    {name:"Upper Nicola Band", lat:50.160, lon:-120.291, status:"mixed",
+     detail:"Co-applicant in the original 2018 Federal Court challenge against TMX approval; signed its own agreement with Trans Mountain in Nov. 2019 covering emergency response and environmental/cultural monitoring, and was party to the Oct. 2020 reroute agreement.",
+     sources:[["World Pipelines, Nov. 2019","https://www.worldpipelines.com/project-news/21112019/trans-mountain-reaches-agreement-with-upper-nicola/"]]},
+    {name:"Lower Nicola Indian Band", lat:50.155, lon:-120.879, status:"mixed",
+     detail:"Has not signed a mutual benefits agreement with Trans Mountain, per its own public Q&A, but is a majority owner of the Kingsvale electricity transmission line built to serve the pipeline's pump stations.",
+     sources:[["Lower Nicola Indian Band Q&A","https://www.lnib.net/qa-trans-mountain-expansion-project/"]]},
+    {name:"Nooaitch Indian Band", lat:50.190, lon:-121.058, status:"mba",
+     detail:"One of eight bands, alongside Coldwater, Boston Bar, Cook's Ferry, Shackan, Siska, Spuzzum, and Upper Nicola, that reached the October 2020 agreement supporting Trans Mountain's 'West Alternate Route' reroute around the Coldwater aquifer.",
+     sources:[["Radio NL on the 2021 reroute","https://www.radionl.com/2021/08/25/trans-mountain-pipeline-expansion-to-be-rerouted-around-coldwater-indian-band/"]]},
+    {name:"Shackan Indian Band", lat:50.289, lon:-121.199, status:"mba",
+     detail:"One of the eight bands in the October 2020 agreement supporting the Coldwater-area reroute (with Coldwater, Boston Bar, Cook's Ferry, Nooaitch, Siska, Spuzzum, and Upper Nicola).",
+     sources:[["Radio NL on the 2021 reroute","https://www.radionl.com/2021/08/25/trans-mountain-pipeline-expansion-to-be-rerouted-around-coldwater-indian-band/"]]},
+    {name:"Boston Bar First Nation", lat:49.868, lon:-121.443, status:"mba",
+     detail:"Roughly 185 km of the pipeline right-of-way crosses Boston Bar's asserted traditional territory, per BC EAO consultation records; also one of the eight bands in the October 2020 Coldwater-area reroute agreement.",
+     sources:[["BC EAO background documents (TMX consultation record)","https://projects.eao.gov.bc.ca/"]]},
+    {name:"Cook's Ferry Indian Band", lat:50.498, lon:-121.279, status:"mba",
+     detail:"One of the eight bands in the October 2020 agreement supporting the Coldwater-area reroute (with Coldwater, Boston Bar, Nooaitch, Shackan, Siska, Spuzzum, and Upper Nicola).",
+     sources:[["Radio NL on the 2021 reroute","https://www.radionl.com/2021/08/25/trans-mountain-pipeline-expansion-to-be-rerouted-around-coldwater-indian-band/"]]},
+    {name:"Siska Indian Band", lat:50.135, lon:-121.571, status:"mba",
+     detail:"One of the eight bands in the October 2020 agreement supporting the Coldwater-area reroute (with Coldwater, Boston Bar, Cook's Ferry, Nooaitch, Shackan, Spuzzum, and Upper Nicola).",
+     sources:[["Radio NL on the 2021 reroute","https://www.radionl.com/2021/08/25/trans-mountain-pipeline-expansion-to-be-rerouted-around-coldwater-indian-band/"]]},
+    {name:"Spuzzum First Nation", lat:49.690, lon:-121.414, status:"mba",
+     detail:"One of the eight bands in the October 2020 agreement supporting the Coldwater-area reroute (with Coldwater, Boston Bar, Cook's Ferry, Nooaitch, Shackan, and Siska, and Upper Nicola).",
+     sources:[["Radio NL on the 2021 reroute","https://www.radionl.com/2021/08/25/trans-mountain-pipeline-expansion-to-be-rerouted-around-coldwater-indian-band/"]]},
+    {name:"Whispering Pines/Clinton Indian Band", lat:50.987, lon:-120.245, status:"mba",
+     detail:"Received $440,000 under its Kinder Morgan mutual benefits agreement and committed to fence its reserve along the pipeline right-of-way; Chief Michael LeBourdais separately pursued Indigenous equity ownership of the pipeline.",
+     sources:[["CFJC Today on Chief LeBourdais and equity ownership","https://cfjctoday.com/2020/01/31/balance-of-power-whispering-pines-clinton-indian-band-chief-mike-lebourdais-and-kamloops-councillor-bill-sarai/"]]},
+    {name:"Neskonlith Indian Band", lat:50.767, lon:-119.745, status:"litigated",
+     detail:"Never signed a benefits agreement; then-Kukpi7 Judy Wilson publicly stated the Nation does not consent to TMX, rejecting Kinder Morgan offers including a firefighting unit, and helped lead the 2017 Secwepemc Peoples Declaration against the project.",
+     sources:[["Kukpi7 Judy Wilson (Neskonlith) letter, 2020","https://mediacoop.ca/story/letter-continued-racism-and-discrimination-secw%C3%A9pe/36959"]]},
+    {name:"Adams Lake Band", lat:50.819, lon:-119.686, status:"mixed",
+     detail:"Raised concerns about risk to Kamloops Lake and Adams/Quesnel Lakes salmon habitat and sought informed consent; a later reported shift toward supporting TMX rests on weak secondary sourcing and was not independently confirmed against a primary document.",
+     sources:[["BC EAO background documents (TMX consultation record)","https://projects.eao.gov.bc.ca/"]]}
+  ];
+
   const TERRITORIES = [
-    {id:"t6", name:"Treaty 6 Nations (Edmonton area)", color:"var(--s1)", kind:"path", width:60,
-     path:["wabamun_lit","stonyPlain_lit","edmonton_lit","edmontonTerminal_lit"],
+    {id:"t6", name:"Enoch Cree Nation", color:"var(--s1)", kind:"path", width:50,
+     path:["edmontonTerminal_lit","edmonton_lit","stonyPlain_lit"],
      status:"mba", statusLabel:"MBA / consultation",
-     blurb:"Enoch Cree Nation, Alexander First Nation, Alexis Nakota Sioux Nation, Paul First Nation (Wabamun), and Métis Nation of Alberta Region 3 hold Treaty 6 and Métis interests around Edmonton.",
-     detail:"Enoch Cree Nation's reserve borders the pipeline right-of-way west of Edmonton; the Nation held a 2018 blessing ceremony for a TMX construction-staging site and holds a mutual benefits agreement. No Treaty 6 Nation here is documented as having litigated against TMX; engagement has been through consultation, monitoring funding, and benefit agreements. Alexander and Alexis Nakota Sioux are regional Treaty 6 stakeholders; direct on-route crossing of their reserves is less clearly documented than Enoch's. Shown at a regional scale around Edmonton, not the full historical Treaty 6 territory (which extends across much of central Alberta and Saskatchewan).",
+     blurb:"Enoch Cree Nation's reserve borders the pipeline right-of-way immediately west of Edmonton. Treaty 6, not part of a shared negotiating body for TMX purposes; shown individually since Paul First Nation, Alexander First Nation, and Alexis Nakota Sioux Nation each engaged separately (see the individual First Nation markers).",
+     detail:"Enoch Cree Nation held a 2018 blessing ceremony for a TMX construction-staging site and holds its own mutual benefits agreement. No Treaty 6 Nation in this area is documented as having litigated against TMX; engagement here has been through consultation, monitoring funding, and benefit agreements. Shown at a regional scale around Edmonton, not the full historical Treaty 6 territory (which extends across much of central Alberta and Saskatchewan).",
      sources:[["CBC: Enoch Cree blessing ceremony, 2018","https://www.cbc.ca/news/canada/edmonton/enoch-cree-stockpile-site-blessing-pipeline-trans-mountain-1.4764672"],["Canada.ca news release, 2018","https://www.canada.ca/en/natural-resources-canada/news/2018/07/trans-mountain-expansion-project-worksite-receives-blessing-from-enoch-cree-nation.html"]]},
     {id:"awn", name:"Aseniwuche Winewak Nation", color:"var(--s2)", kind:"path", width:75,
      path:["grandeCache","hinton","jasper","mtRobson"],
@@ -400,11 +469,11 @@
      blurb:"SSN, the joint governance body of Tk'emlúps te Secwépemc and Skeetchestn, filed a 2015 Aboriginal title claim over roughly 1.25 million hectares (~12,500 km²) centred on the confluence of the North and South Thompson Rivers at Kamloops: west of the Fraser to Quesnel, east to Windermere, along the northern Arrow Lakes to Salmon River/Enderby, then to the Logan Lake Plateau and back to Ashcroft.",
      detail:"SSN signed a 2019 mutual benefits agreement conditioned on trenchless construction through the sacred Pípsell (Jacko Lake) corridor near Kamloops, and withdrew from Federal Court litigation shortly after, then formally opposed the CER's 2023 approval of open-cut trenching there instead (completed Feb. 2024). This shape is SSN's own specific 2015 title-claim area, not the wider Secwépemc Nation's full traditional territory; see the separate 2003 joint title claim (dashed outline, below) for the broader multi-band claim, and Simpcw First Nation (above) for its own, more specific North Thompson valley territory, which sits inside both.",
      sources:[["Daily Hive (2015) on the SSN title-claim perimeter","https://dailyhive.com/vancouver/secwepemc-first-nation-aboriginal-title-claim-bc-kamloops-sun-peaks"],["The Tyee, Feb. 2024, on the Pípsell trenching decision","https://thetyee.ca/News/2024/02/29/Why-Did-Trans-Mountain-Dig-Through-Indigenous-Burial-Site/"],["IndigiNews on the CER's 2023 approval","https://indiginews.com/features/regulator-approves-tmx-to-trench-through-extremely-sacred-secwepemcsite"],["Stk'emlupsemc te Secwépemc Nation (tkemlups.ca)","https://tkemlups.ca/files/2015/10/Stkemlupsemc-Te-Secwepemc-Nation-SSN.pdf"]]},
-    {id:"nlakapamux", name:"Nlaka'pamux / Scw'exmx Tribal Council", color:"var(--s5)", kind:"path", width:85,
-     path:["bostonBar","lytton","spencesBridge","ashcroft","merritt","princeton"],
+    {id:"nlakapamux", name:"Coldwater Indian Band", color:"var(--s5)", kind:"path", width:55,
+     path:["merritt","coldwater"],
      status:"litigated", statusLabel:"Litigated (Federal Court)",
-     blurb:"Coldwater Indian Band, Nooaitch, Upper Nicola, Lower Nicola, and Shackan hold territory through the Fraser Canyon, Nicola Valley, and Similkameen; governed regionally by the Scw'exmx Tribal Council (formerly the Nicola Tribal Association) and, further down the Fraser Canyon, the Nlaka'pamux Nation Tribal Council.",
-     detail:"Coldwater Indian Band won Coldwater Indian Band v. Canada, 2017 FCA 199, which found Canada breached a fiduciary duty by not properly scrutinizing aquifer risk before consenting to the pipeline easement assignment. Coldwater, alongside Squamish and Tsleil-Waututh, later lost a second-round challenge in Coldwater Indian Band v. Canada (AG), 2020 FCA 34 (leave to appeal to the SCC denied, July 2020). The CER approved an 18 km 'West Alternate Route' around the Coldwater aquifer in 2021. Upper Nicola litigated in the original 2018 FCA case, then signed its own agreement with Trans Mountain in Nov. 2019.",
+     blurb:"Coldwater Indian Band's reserve and the Coldwater aquifer sit just south of Merritt, in the Nicola Valley. Shown individually, not as one Scw'exmx-wide zone, since Coldwater litigated on its own; Nooaitch, Upper Nicola, Lower Nicola, Shackan, and other Scw'exmx/Nlaka'pamux bands each reached their own distinct outcomes (see the individual First Nation markers).",
+     detail:"Coldwater Indian Band won Coldwater Indian Band v. Canada, 2017 FCA 199, which found Canada breached a fiduciary duty by not properly scrutinizing aquifer risk before consenting to the pipeline easement assignment. Coldwater, alongside Squamish and Tsleil-Waututh, later lost a second-round challenge in Coldwater Indian Band v. Canada (AG), 2020 FCA 34 (leave to appeal to the SCC denied, July 2020). The CER approved an 18 km 'West Alternate Route' around the Coldwater aquifer in 2021, reached jointly with seven other bands (Boston Bar, Cook's Ferry, Nooaitch, Shackan, Siska, Spuzzum, Upper Nicola); see the individual First Nation markers for each.",
      sources:[["BLG summary of Coldwater v. Canada, 2017 FCA 199","https://www.blg.com/en/insights/2017/09/coldwater-indian-band-v-canada-aboriginal-affairs-and-northern-development-2017-fca-199"],["Torys summary of 2020 FCA 34","https://www.torys.com/insights/publications/2020/02/federal-court-of-appeal-upholds-approval-for-the-trans-mountain-expansion-project"],["Radio NL on the 2021 reroute","https://www.radionl.com/2021/08/25/trans-mountain-pipeline-expansion-to-be-rerouted-around-coldwater-indian-band/"]]},
     {id:"stolo", name:"Stó:lō &amp; Fraser Valley / Lower Mainland Nations", color:"var(--s6)", kind:"path", width:80,
      path:["yale","hope","harrisonHotSprings","agassiz","chilliwack","mission","abbotsford","langley","pittMeadows","barnstonIsland"],
@@ -754,6 +823,18 @@
     svg.appendChild(g);
   });
 
+  const fnMarkerGroup = el("g", {id:"fn-markers"});
+  FIRST_NATION_MARKERS.forEach(f=>{
+    const c = proj(f.lat, f.lon);
+    const dot = el("circle", {cx:c.x, cy:c.y, r:4.5, class:"fn-marker fn-"+f.status});
+    const title = el("title", {});
+    title.textContent = f.name + ": " + f.detail;
+    dot.appendChild(title);
+    dot.addEventListener("click", ()=>renderDetail({name:f.name, detail:f.detail, sources:f.sources}));
+    fnMarkerGroup.appendChild(dot);
+  });
+  svg.appendChild(fnMarkerGroup);
+
   const legendRows = document.getElementById("legend-rows");
   const detailPanel = document.getElementById("detail-panel");
   const chipClass = {litigated:"chip-litigated", mba:"chip-mba", mixed:"chip-mixed", disputed:"chip-disputed"};
@@ -812,6 +893,24 @@
   claim2003Cb.addEventListener("click", e=>e.stopPropagation());
   claim2003Cb.addEventListener("change", ()=>{ claim2003Path.style.display = claim2003Cb.checked ? "" : "none"; });
   legendRows.appendChild(claim2003Row);
+
+  const fnRow = document.createElement("div");
+  fnRow.className = "leg-row";
+  fnRow.innerHTML =
+    '<input type="checkbox" checked data-zone="fn-markers">' +
+    '<span class="swatch" style="background:#1a8a3a;border-radius:50%"></span>' +
+    '<span class="leg-text"><span class="leg-name">Individual First Nations along the route</span><br>' +
+    '<span style="font-size:0.75rem;">' +
+      '<span class="fn-key-dot" style="background:#1a8a3a"></span>MBA/agreement&nbsp;&nbsp;' +
+      '<span class="fn-key-dot" style="background:#c98500"></span>mixed/raised concerns&nbsp;&nbsp;' +
+      '<span class="fn-key-dot" style="background:#c23b3b"></span>opposed/litigated&nbsp;&nbsp;' +
+      '<span class="fn-key-dot" style="background:#898781"></span>no documented position' +
+    '</span><br>' +
+    '<span>14 individual bands with their own documented TMX position, shown as dots rather than shapes since the record supports a specific reserve location and stance for each but not a described territorial extent. Click a dot on the map for details and sources. Bonaparte, Splatsin, and High Bar were researched and excluded: the first two are confirmed not crossed by the route with no documented TMX engagement, and no data was retrieved for High Bar before this session hit a usage limit.</span></span>';
+  const fnCb = fnRow.querySelector("input");
+  fnCb.addEventListener("click", e=>e.stopPropagation());
+  fnCb.addEventListener("change", ()=>{ fnMarkerGroup.style.display = fnCb.checked ? "" : "none"; });
+  legendRows.appendChild(fnRow);
 
   const legendRowsProposed = document.getElementById("legend-rows-proposed");
 
