@@ -1,0 +1,936 @@
+<title>TMX Pipeline Route &amp; First Nations Traditional Territories</title>
+<style>
+  .viz-root {
+    --surface-1:      #fcfcfb;
+    --page:           #f9f9f7;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted:     #898781;
+    --gridline:       #e1e0d9;
+    --baseline:       #c3c2b7;
+    --border:         rgba(11,11,11,0.10);
+    --critical:       #d03b3b;
+    --warning:        #fab219;
+    --s1: #2a78d6; /* Treaty 6 (Edmonton area) */
+    --s2: #1baf7a; /* Aseniwuche Winewak Nation */
+    --s3: #eda100; /* Simpcw First Nation */
+    --s4: #008300; /* Secwepemc Nation (broader territory) */
+    --s5: #4a3aa7; /* Nlaka'pamux / Scw'exmx Tribal Council */
+    --s6: #e34948; /* Sto:lo & Fraser Valley / Lower Mainland Nations */
+    --s7: #e87ba4; /* Tsleil-Waututh Nation */
+    --s8: #eb6834; /* Squamish Nation */
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    color: var(--text-primary);
+    background: var(--page);
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 20px 20px 60px;
+    line-height: 1.5;
+  }
+  .viz-root * { box-sizing: border-box; }
+  h1 { font-size: 1.5rem; margin: 0 0 4px; }
+  .subtitle { color: var(--text-secondary); font-size: 0.95rem; margin: 0 0 16px; }
+  .banner {
+    background: #fff9ec;
+    border: 1px solid #e8d9ae;
+    border-left: 4px solid var(--warning);
+    border-radius: 6px;
+    padding: 12px 16px;
+    font-size: 0.86rem;
+    color: var(--text-secondary);
+    margin-bottom: 18px;
+  }
+  .banner strong { color: var(--text-primary); }
+  .layout { display: flex; gap: 20px; align-items: flex-start; }
+  .map-col { flex: 1 1 720px; min-width: 0; }
+  .side-col { flex: 0 0 320px; }
+  @media (max-width: 900px) {
+    .layout { flex-direction: column; }
+    .side-col { flex: 1 1 auto; width: 100%; }
+  }
+  .map-frame {
+    background: #eef2f6;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+  }
+  svg#map { width: 100%; height: auto; display: block; cursor: grab; touch-action: none; }
+  svg#map.dragging { cursor: grabbing; }
+  .zoom-controls {
+    position: absolute; top: 10px; right: 10px;
+    display: flex; flex-direction: column; gap: 4px;
+    z-index: 2;
+  }
+  .zoom-btn {
+    width: 30px; height: 30px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: rgba(252,252,251,0.92);
+    color: var(--text-primary);
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 1px 2px rgba(11,11,11,0.08);
+  }
+  .zoom-btn:hover { background: var(--surface-1); }
+  .zoom-btn.reset { font-size: 0.65rem; font-weight: 600; }
+  .land-bc { fill: #eef1e6; stroke: #b7c2a8; stroke-width: 1; }
+  .land-ab { fill: #f4efe3; stroke: #cdc0a0; stroke-width: 1; }
+  .water { fill: #dbe7ef; }
+  .river { fill: none; stroke: #8fb6cf; stroke-width: 1.3; }
+  .route-line { fill: none; stroke: #24211d; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+  .route-line.core { stroke: #6b6a63; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; opacity: 0.3; }
+  .proposed-line { fill: none; stroke: var(--warning); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 2 5; }
+  .proposed-line.core { stroke: #cc8b00; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; opacity: 0.25; stroke-dasharray: none; }
+  .territory { mix-blend-mode: multiply; stroke: none; transition: opacity .15s; filter: url(#soften); }
+  .terminus-overlap {
+    fill: none;
+    stroke: var(--text-primary);
+    stroke-width: 1.6;
+    stroke-dasharray: 1 3.4;
+    stroke-linecap: round;
+  }
+  .terminus-overlap.proposed { stroke: #b06a00; stroke-dasharray: 5 3; }
+  .city-dot { fill: var(--text-primary); }
+  .proposed-dot { fill: #b06a00; stroke: #fff; stroke-width: 1; }
+  .city-label { font-size: 10.5px; fill: var(--text-primary); }
+  .proposed-label { font-size: 10.5px; fill: #7a4e00; font-weight: 600; }
+  .river-dot { fill: #fff; stroke: var(--text-muted); stroke-width: 1.3; }
+  .dispute-dot { fill: var(--critical); stroke: #fff; stroke-width: 1; }
+  .map-label { font-size: 11px; fill: var(--text-secondary); font-style: italic; }
+  .legend { border: 1px solid var(--border); border-radius: 10px; background: var(--surface-1); padding: 12px 14px; }
+  .legend h2 { font-size: 0.95rem; margin: 0 0 8px; }
+  .legend + .legend { margin-top: 14px; }
+  .leg-row { display: flex; align-items: flex-start; gap: 8px; padding: 6px 4px; border-radius: 6px; cursor: pointer; }
+  .leg-row:hover { background: var(--gridline); }
+  .leg-row input { margin-top: 3px; }
+  .swatch { width: 13px; height: 13px; border-radius: 3px; flex: 0 0 13px; margin-top: 2px; }
+  .leg-text { font-size: 0.82rem; }
+  .leg-name { font-weight: 600; }
+  .status-chip {
+    display: inline-block; font-size: 0.68rem; font-weight: 600; padding: 1px 6px;
+    border-radius: 999px; margin-top: 2px;
+  }
+  .chip-litigated { background: #fbe4e4; color: #8a2323; }
+  .chip-mba { background: #e2f0e2; color: #24601f; }
+  .chip-mixed { background: #fdeecb; color: #7a4e00; }
+  .chip-disputed { background: #f5e2f0; color: #7a1f60; }
+  .chip-proposed { background: #fdeecb; color: #7a4e00; }
+  .detail-panel {
+    margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--gridline);
+    font-size: 0.82rem; color: var(--text-secondary); display: none;
+  }
+  .detail-panel.show { display: block; }
+  .detail-panel h3 { font-size: 0.85rem; color: var(--text-primary); margin: 0 0 4px; }
+  .detail-panel ul { margin: 6px 0 0; padding-left: 16px; }
+  .detail-panel a { color: #2a5ea8; }
+  .overlap-section { margin-top: 24px; }
+  .overlap-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; margin-top: 10px; }
+  .overlap-card {
+    border: 1px solid var(--border); border-left: 4px solid var(--critical);
+    border-radius: 8px; background: var(--surface-1); padding: 10px 12px; font-size: 0.83rem;
+  }
+  .overlap-card h3 { font-size: 0.88rem; margin: 0 0 4px; }
+  .overlap-card .nations { color: var(--text-secondary); font-size: 0.78rem; margin-bottom: 6px; }
+  footer { margin-top: 30px; border-top: 1px solid var(--gridline); padding-top: 14px; font-size: 0.78rem; color: var(--text-secondary); }
+  footer details { margin-bottom: 8px; }
+  footer summary { cursor: pointer; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+  footer ul { margin: 4px 0 10px; padding-left: 18px; }
+  footer a { color: #2a5ea8; }
+  .stat-row { display: flex; gap: 14px; flex-wrap: wrap; margin: 10px 0 16px; }
+  .stat-tile { background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 0.78rem; }
+  .stat-tile b { display: block; font-size: 1rem; }
+</style>
+
+<div class="viz-root">
+  <h1>Trans Mountain Pipeline (TMX): Route &amp; Broader First Nations Territories</h1>
+  <p class="subtitle">Edmonton, AB &#8594; Westridge Marine Terminal, Burnaby, BC &middot; plus the proposed 2026 Bruderheim&ndash;Roberts Bank expansion &middot; basemap from real coastline/border/river data, territories schematic</p>
+
+  <div class="banner">
+    <strong>Read this before the map.</strong> The <strong>coastline, provincial border, rivers, and lakes</strong> below are real simplified geometry (Natural Earth 1:50m data), not hand-drawn approximations. The <strong>territory areas are still schematic</strong>: polygons anchored to landmarks each Nation itself cites (e.g. Howe Sound, Mt Garibaldi, the Athabasca headwaters, the Arrow Lakes), not surveyed or legally-binding boundaries. Many Nations' territories extend further still; where a Nation's own site gives a precise area figure, its polygon roughly targets that scale. Overlap between areas reflects genuinely overlapping/shared or contested claims reported in the sources below, not map error. This is an educational reference assembled from Nations' own public statements, court records, Canada Energy Regulator filings, and news reporting; it is <strong>not a legal document</strong> and should not be used for consultation, land-claim, or governmental decision-making. Where a boundary leans on general/crowdsourced-style reference rather than a primary document, that is noted in each entry. See <a href="https://native-land.ca" target="_blank" rel="noopener">Native Land Digital</a>'s own caveat that its maps "should not be used for legal claims, land disputes, or governmental decision-making." The dashed amber line is a <strong>proposed, unapproved 2026 project</strong>, not an existing pipeline; see its own note below.
+  </div>
+
+  <div class="stat-row">
+    <div class="stat-tile"><b>~1,150&ndash;1,492 km</b>TMX total system length (route-km vs. regulated pipe-km differ by source)</div>
+    <div class="stat-tile"><b>890,000 bpd</b>TMX capacity after expansion (from 300,000 bpd)</div>
+    <div class="stat-tile"><b>May 1, 2024</b>TMX commercial operations began at full capacity</div>
+    <div class="stat-tile"><b>~1,211&ndash;1,250 km, 1,000,000 bpd</b>proposed West Coast Oil Pipeline (Bruderheim &#8594; Roberts Bank), not yet approved</div>
+  </div>
+
+  <div class="layout">
+    <div class="map-col">
+      <div class="map-frame">
+        <svg id="map" viewBox="0 0 1200 900" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="soften" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="6"/>
+            </filter>
+          </defs>
+        </svg>
+        <div class="zoom-controls">
+          <button type="button" class="zoom-btn" id="zoom-in" title="Zoom in" aria-label="Zoom in">+</button>
+          <button type="button" class="zoom-btn" id="zoom-out" title="Zoom out" aria-label="Zoom out">&minus;</button>
+          <button type="button" class="zoom-btn reset" id="zoom-reset" title="Reset view" aria-label="Reset view">&#8634;</button>
+        </div>
+      </div>
+      <p style="font-size:0.75rem;color:var(--text-secondary);margin-top:6px;">
+        Scroll or pinch to zoom, drag to pan, double-click to zoom in. Toggle territories in the legend. Overlapping areas darken where they intersect (multiply blend): that darkening <em>is</em> the overlap signal. Red dots mark specific documented dispute/consultation flashpoints (approximate locations). The dashed amber line and markers are the proposed, unapproved 2026 expansion.
+      </p>
+    </div>
+
+    <div class="side-col">
+      <div class="legend" id="legend">
+        <h2>Traditional territories (broader extent)</h2>
+        <div id="legend-rows"></div>
+        <div class="detail-panel" id="detail-panel"></div>
+      </div>
+      <div class="legend" id="legend-proposed">
+        <h2>Proposed 2026 expansion</h2>
+        <div id="legend-rows-proposed"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlap-section">
+    <h2 style="font-size:1.05rem;">Documented overlapping / contested claims along the corridor</h2>
+    <div class="overlap-grid" id="overlap-grid"></div>
+  </div>
+
+  <footer>
+    <p><strong>Methodology:</strong> Coastline, the Alberta&ndash;BC border, major rivers (Fraser, Athabasca, North Saskatchewan, Columbia) and select lakes are real, simplified boundary/hydrography data from Natural Earth (1:50m cultural &amp; physical vectors), clipped and lightly decimated for this map, not hand-approximated. Pipeline waypoints are drawn from Trans Mountain's 2013 CER/NEB Project Description, CER pipeline-profile and watercourse-crossing records, and corroborating news/encyclopedic sources. Territory polygons are schematic areas anchored to specific landmarks each Nation's own materials, BC Environmental Assessment Office consultation appendices, CER filings, or court records associate with their territory (e.g. Squamish's own site names Howe Sound, Whistler, and Burrard Inlet); landmark coordinates were independently geocoded, not estimated by eye. The five full-territory shapes with a cited area figure (Secw&eacute;pemc ~180,000 km&sup2;, Squamish ~6,732 km&sup2;, Tsleil-Waututh ~1,865 km&sup2;, Musqueam ~5,330 km&sup2;) are uniformly scaled about their centroid to match that figure, then rendered as a smoothed curve through the landmark vertices rather than a hard-edged polygon, so the shape reads as an approximate zone rather than a surveyed boundary; the five corridor bands (Treaty 6, Aseniwuche Winewak, Simpcw, Nlaka'pamux, St&oacute;:l&#333;) are drawn at a fixed width along the relevant valley/corridor and are not area-matched, since they represent a travel corridor rather than a full territorial outline. The Secw&eacute;pemc Nation's own tribal council (Shuswap Nation Tribal Council) publishes its 180,000&nbsp;km&sup2; area figure and a 17-community declaration but, as far as this research found, no single closed-perimeter landmark boundary; this map's outline instead combines SNTC's cited area with the fuller cardinal-extent and named-landmark description published by Tk'em&lup;s te Secw&eacute;pemc and the Secwepemc Cultural Education Society (Columbia River/Rockies east, Fraser River west, upper Fraser/Cariboo-Chilcotin Plateau north, Arrow Lakes south), which is the most landmark-precise Secw&eacute;pemc-sourced description located. No portion of this map should be read as an official or legal statement of any Nation's territory. The proposed West Coast Oil Pipeline (Bruderheim to Roberts Bank) is unapproved as of August 2026; its route, terminal design, and Indigenous consultation process are all still pending, so its line and markers should be read as illustrative of the publicly reported corridor, not a finalized alignment.</p>
+
+    <details>
+      <summary>Sources by region</summary>
+      <ul>
+        <li><strong>Basemap:</strong> Natural Earth 1:50m Admin-1 States/Provinces, Rivers &amp; Lake Centerlines, Lakes (naturalearthdata.com, public domain, via the nvkelso/natural-earth-vector mirror).</li>
+        <li><strong>Route &amp; geography:</strong> CER REGDOCS Project Description (apps.neb-one.gc.ca); CER Pipeline Profiles (apps.cer-rec.gc.ca); Wikipedia: Trans Mountain pipeline, Yellowhead Pass; CBC on the 2021 Coldwater/Coquihalla shutdown.</li>
+        <li><strong>Edmonton/Treaty 6 area:</strong> Canada.ca / CBC on Enoch Cree Nation's 2018 TMX blessing ceremony; Enoch Cree Nation, Alexander First Nation, Alexis Nakota Sioux Nation official sites; Western Indigenous Pipeline Group.</li>
+        <li><strong>Jasper / Aseniwuche Winewak:</strong> Aseniwuche Winewak Nation official site; Parks Canada Indigenous-connections page for Jasper NP; Global News &amp; CBC on 2023&ndash;24 Jasper access calls; MONTECRISTO Magazine on Simpcw&ndash;Stoney&ndash;AWN dynamics.</li>
+        <li><strong>Simpcw &amp; Secw&eacute;pemc:</strong> Simpcw First Nation official site (territory description &amp; hectare figure); APTN "Travelling the pipeline"; Business in Vancouver; Stk'emlupsemc te Secw&eacute;pemc Nation (tkemlups.ca); IndigiNews &amp; The Tyee on the P&iacute;psell/Jacko Lake dispute (2023&ndash;24); Radio NL; Media Co-op (Kukpi7 Judy Wilson, Neskonlith); APTN on Tiny House Warriors; Shuswap Nation Tribal Council's Secwepemc Nation Unity Declaration (2012, shuswapnation.org) for the 180,000 km&sup2;/17-community figure; Tk'em&lup;s te Secw&eacute;pemc "Our Land" and Wikipedia's Secwepemc entry for the cardinal-extent/named-landmark description; Daily Hive (2015) on the SSN title-claim perimeter.</li>
+        <li><strong>Nlaka'pamux / Scw'exmx / Coldwater:</strong> Coldwater Indian Band v. Canada, 2017 FCA 199; Coldwater Indian Band v. Canada (AG), 2020 FCA 34; Scw'exmx Tribal Council (scwexmxtribal.com); Radio NL on the 2021 West Alternate Route; CBC on the Condition 39 aquifer report.</li>
+        <li><strong>St&oacute;:l&#333; / Fraser Valley:</strong> BC EAO TMX Consultation &amp; Accommodation Report, Appendices C.7&ndash;C.19 (Chawathil, Cheam, Matsqui, Kwantlen, Katzie, St&oacute;:l&#333; Collective); CBC on Sumas First Nation (Lightning Rock, 2020 spill); local news on Katzie's Feb. 2023 stop-work order.</li>
+        <li><strong>Burrard Inlet terminus:</strong> Tsleil-Waututh Nation, Squamish Nation, Musqueam Indian Band official sites (each names its own landmark extent); Tsleil-Waututh Nation v. Canada (AG), 2018 FCA 153; Coldwater First Nation v. Canada (AG), 2020 FCA 34; CBC / RCAANC on the 2025 Musqueam Rights Recognition Agreement.</li>
+        <li><strong>Proposed West Coast Oil Pipeline (2026):</strong> PM news release (July 2, 2026, pm.gc.ca); Alberta government project page (alberta.ca/west-coast-oil-pipeline) and its plain-language MPO submission; Canada Gazette notice (Aug. 1, 2026); CBC, Daily Hive, The Narwhal, BNN Bloomberg, Globe and Mail, National Observer reporting on route, cost, and Indigenous response; Tsawwassen First Nation's official statement (tsawwassenfirstnation.com); Union of BC Indian Chiefs' Aug. 9, 2026 letter.</li>
+        <li><strong>Native Land Digital:</strong> native-land.ca/about/faq, used only as a general-reference caveat, not as a boundary source for this map.</li>
+      </ul>
+    </details>
+    <p>Built for educational/orientation purposes. Verify any claim here directly with the Nation in question, the CER public registry, or primary court records before relying on it.</p>
+  </footer>
+</div>
+
+<script>
+(function(){
+  const ROUTE = [
+    {n:"Edmonton (Terminal)", lat:53.52, lon:-113.31, label:true},
+    {n:"Edmonton, AB", lat:53.55, lon:-113.47},
+    {n:"N. Saskatchewan River crossing", lat:53.46, lon:-113.63, river:true},
+    {n:"Spruce Grove, AB", lat:53.55, lon:-113.90},
+    {n:"Stony Plain, AB", lat:53.53, lon:-114.00},
+    {n:"Wabamun, AB", lat:53.55, lon:-114.46, label:true},
+    {n:"Gainford, AB", lat:53.53, lon:-114.72},
+    {n:"Entwistle, AB", lat:53.58, lon:-115.02},
+    {n:"Evansburg, AB", lat:53.58, lon:-115.13},
+    {n:"Wildwood, AB", lat:53.61, lon:-115.32},
+    {n:"Niton Junction, AB", lat:53.62, lon:-115.77},
+    {n:"Edson, AB", lat:53.58, lon:-116.43, label:true},
+    {n:"Hinton, AB", lat:53.41, lon:-117.56, label:true},
+    {n:"Jasper, AB", lat:52.87, lon:-118.08, label:true},
+    {n:"Yellowhead Pass (AB/BC border)", lat:52.89, lon:-118.46, pass:true},
+    {n:"Mount Robson Prov. Park", lat:53.03, lon:-119.15},
+    {n:"Tête Jaune Cache, BC", lat:52.95, lon:-119.43},
+    {n:"Valemount, BC", lat:52.83, lon:-119.28, label:true},
+    {n:"Blue River, BC", lat:52.10, lon:-119.30, label:true},
+    {n:"Avola, BC", lat:51.78, lon:-119.34},
+    {n:"Clearwater, BC", lat:51.65, lon:-120.03, label:true},
+    {n:"Vavenby, BC", lat:51.58, lon:-119.78},
+    {n:"Little Fort, BC", lat:51.42, lon:-120.19},
+    {n:"Barriere, BC", lat:51.18, lon:-120.13},
+    {n:"Darfield / Black Pines, BC", lat:50.94, lon:-120.38},
+    {n:"Kamloops, BC", lat:50.68, lon:-120.34, label:true},
+    {n:"Merritt, BC", lat:50.11, lon:-120.79, label:true},
+    {n:"Kingsvale, BC", lat:49.91, lon:-120.91},
+    {n:"Coquihalla Summit area", lat:49.68, lon:-121.02},
+    {n:"Hope, BC", lat:49.38, lon:-121.44, label:true},
+    {n:"Chilliwack, BC", lat:49.17, lon:-121.95, label:true},
+    {n:"Abbotsford, BC (Sumas)", lat:49.04, lon:-122.15, label:true},
+    {n:"Langley Township, BC", lat:49.10, lon:-122.66, label:true},
+    {n:"Surrey, BC", lat:49.11, lon:-122.83, label:true},
+    {n:"Coquitlam, BC (Fraser crossing)", lat:49.22, lon:-122.81, label:true, river:true},
+    {n:"Burnaby / Westridge Terminal", lat:49.28, lon:-122.94, label:true},
+    {n:"Westridge Marine Terminal", lat:49.29, lon:-122.95}
+  ];
+
+  /* Proposed "West Coast Oil Pipeline" (Bruderheim, AB -> Roberts Bank, BC), announced
+     July 2 2026, referred to the federal Major Projects Office, not yet approved.
+     Follows the existing TMX corridor to Hope, then splits into the two corridor
+     options named in Alberta's own MPO submission. */
+  const PROPOSED_SHARED = [
+    {n:"Bruderheim, AB (Receipt Terminal)", lat:53.802, lon:-112.928, label:true},
+    {n:"Edson, AB", lat:53.58, lon:-116.43},
+    {n:"Hinton, AB", lat:53.41, lon:-117.56},
+    {n:"Jasper, AB", lat:52.87, lon:-118.08},
+    {n:"Blue River, BC", lat:52.10, lon:-119.30},
+    {n:"Clearwater, BC", lat:51.65, lon:-120.03},
+    {n:"Little Fort, BC", lat:51.42, lon:-120.19},
+    {n:"Kamloops, BC", lat:50.68, lon:-120.34},
+    {n:"Merritt, BC", lat:50.11, lon:-120.79},
+    {n:"Hope, BC", lat:49.38, lon:-121.44}
+  ];
+  const PROPOSED_ORIGINAL = [
+    {n:"Bridal Falls, BC", lat:49.181, lon:-121.739},
+    {n:"Cultus Lake, BC", lat:49.055, lon:-121.984},
+    {n:"Roberts Bank Delivery Terminal", lat:49.054, lon:-123.118, label:true}
+  ];
+  const PROPOSED_OPTIMIZED = [
+    {n:"Mission, BC", lat:49.159, lon:-122.284},
+    {n:"Langley Township, BC", lat:49.10, lon:-122.66},
+    {n:"Roberts Bank Delivery Terminal", lat:49.054, lon:-123.118}
+  ];
+
+  /* Real, simplified geometry (Natural Earth 1:50m), clipped to lon -126.5..-112.5, lat 47.3..55.2 */
+  const BASEMAP = {"bc":[[[-120.001,55.2],[-120.001,54.998],[-120.001,54.613],[-120.001,54.229],[-120.001,53.844],[-119.973,53.797],[-119.917,53.77],[-119.904,53.723],[-119.885,53.708],[-119.812,53.699],[-119.735,53.634],[-119.743,53.615],[-119.887,53.615],[-119.918,53.612],[-119.896,53.567],[-119.894,53.516],[-119.855,53.509],[-119.82,53.491],[-119.723,53.4],[-119.68,53.371],[-119.648,53.363],[-119.592,53.372],[-119.435,53.362],[-119.4,53.353],[-119.309,53.242],[-119.261,53.209],[-119.046,53.144],[-119.022,53.139],[-119.016,53.204],[-118.993,53.236],[-118.914,53.212],[-118.804,53.153],[-118.774,53.122],[-118.766,53.065],[-118.731,53.058],[-118.678,53.026],[-118.668,52.972],[-118.631,52.909],[-118.605,52.895],[-118.502,52.888],[-118.477,52.879],[-118.428,52.836],[-118.413,52.784],[-118.358,52.742],[-118.33,52.709],[-118.319,52.674],[-118.35,52.623],[-118.288,52.562],[-118.266,52.518],[-118.225,52.483],[-118.247,52.441],[-118.243,52.409],[-118.221,52.386],[-118.191,52.384],[-118.06,52.413],[-118.044,52.427],[-118.029,52.466],[-118.002,52.486],[-117.883,52.43],[-117.758,52.395],[-117.732,52.383],[-117.735,52.353],[-117.822,52.272],[-117.788,52.233],[-117.751,52.208],[-117.587,52.142],[-117.385,52.144],[-117.348,52.159],[-117.32,52.156],[-117.245,52.047],[-117.077,51.926],[-117.037,51.886],[-116.939,51.736],[-116.913,51.714],[-116.83,51.715],[-116.808,51.753],[-116.791,51.771],[-116.758,51.789],[-116.718,51.8],[-116.674,51.791],[-116.634,51.758],[-116.567,51.651],[-116.502,51.615],[-116.458,51.574],[-116.411,51.544],[-116.377,51.497],[-116.31,51.448],[-116.279,51.348],[-116.25,51.323],[-116.176,51.297],[-116.135,51.266],[-116.054,51.237],[-116.035,51.218],[-116.014,51.151],[-115.998,51.13],[-115.94,51.102],[-115.794,51.07],[-115.619,50.962],[-115.596,50.936],[-115.588,50.909],[-115.64,50.869],[-115.433,50.756],[-115.399,50.731],[-115.376,50.727],[-115.347,50.729],[-115.311,50.697],[-115.298,50.673],[-115.311,50.642],[-115.267,50.594],[-115.222,50.563],[-115.189,50.557],[-115.128,50.585],[-115.091,50.585],[-115.048,50.577],[-114.993,50.545],[-114.789,50.359],[-114.716,50.129],[-114.668,50.061],[-114.652,50.02],[-114.651,49.985],[-114.678,49.955],[-114.685,49.934],[-114.638,49.797],[-114.643,49.73],[-114.686,49.643],[-114.737,49.604],[-114.717,49.569],[-114.681,49.556],[-114.602,49.551],[-114.577,49.544],[-114.576,49.519],[-114.59,49.452],[-114.588,49.42],[-114.565,49.394],[-114.48,49.333],[-114.426,49.274],[-114.386,49.252],[-114.378,49.232],[-114.355,49.211],[-114.19,49.168],[-114.164,49.147],[-114.133,49.094],[-114.057,49.038],[-114.051,49.015],[-114.063,48.993],[-114.159,48.993],[-114.585,48.993],[-115.011,48.993],[-115.438,48.993],[-115.864,48.993],[-116.048,48.993],[-116.291,48.993],[-116.717,48.993],[-117.039,48.993],[-117.143,48.993],[-117.57,48.993],[-117.996,48.993],[-118.423,48.993],[-118.849,48.993],[-119.275,48.993],[-119.702,48.993],[-120.128,48.993],[-120.554,48.993],[-120.981,48.993],[-121.407,48.993],[-121.834,48.993],[-122.26,48.993],[-122.686,48.993],[-122.789,48.993],[-122.827,49.028],[-122.924,49.075],[-122.963,49.075],[-123.002,49.061],[-123.027,49.039],[-123.049,48.993],[-123.086,48.993],[-123.118,49.056],[-123.109,49.085],[-123.077,49.118],[-123.15,49.121],[-123.182,49.13],[-123.196,49.148],[-123.191,49.22],[-123.229,49.261],[-123.184,49.278],[-123.067,49.292],[-122.948,49.293],[-122.913,49.323],[-122.879,49.399],[-122.964,49.329],[-123.016,49.322],[-123.174,49.348],[-123.277,49.344],[-123.291,49.359],[-123.264,49.39],[-123.248,49.443],[-123.223,49.59],[-123.191,49.644],[-123.18,49.674],[-123.325,49.578],[-123.337,49.545],[-123.322,49.517],[-123.336,49.459],[-123.399,49.442],[-123.437,49.451],[-123.508,49.402],[-123.531,49.397],[-123.859,49.483],[-123.892,49.495],[-123.948,49.535],[-124.029,49.603],[-124.054,49.662],[-124.024,49.711],[-123.993,49.736],[-123.96,49.736],[-123.923,49.718],[-123.847,49.637],[-123.817,49.587],[-123.739,49.594],[-123.613,49.658],[-123.582,49.681],[-123.708,49.657],[-123.763,49.659],[-123.818,49.685],[-123.874,49.737],[-123.904,49.795],[-123.904,49.981],[-123.885,50.017],[-123.824,50.044],[-123.785,50.088],[-123.825,50.144],[-123.88,50.174],[-123.934,50.188],[-123.863,50.103],[-123.866,50.072],[-123.957,49.993],[-123.971,49.97],[-123.972,49.892],[-123.985,49.876],[-124.059,49.854],[-124.142,49.793],[-124.281,49.772],[-124.413,49.778],[-124.483,49.808],[-124.702,49.958],[-124.782,50.02],[-124.784,50.073],[-124.934,50.258],[-124.933,50.298],[-124.986,50.356],[-125.044,50.364],[-125.057,50.419],[-124.937,50.537],[-124.863,50.637],[-124.854,50.669],[-124.858,50.717],[-124.875,50.826],[-124.86,50.872],[-124.934,50.811],[-124.949,50.765],[-124.931,50.718],[-124.943,50.666],[-124.985,50.592],[-125.059,50.514],[-125.21,50.476],[-125.476,50.497],[-125.507,50.507],[-125.526,50.534],[-125.539,50.649],[-125.556,50.635],[-125.586,50.574],[-125.61,50.486],[-125.641,50.466],[-125.698,50.465],[-125.741,50.479],[-125.772,50.508],[-125.84,50.511],[-125.965,50.487],[-126.024,50.497],[-126.094,50.498],[-126.237,50.523],[-126.404,50.53],[-126.45,50.55],[-126.447,50.588],[-126.416,50.607],[-126.239,50.624],[-126.067,50.664],[-125.898,50.684],[-125.904,50.705],[-125.981,50.711],[-126.37,50.667],[-126.493,50.672],[-126.5,50.741],[-126.472,50.767],[-126.397,50.807],[-126.375,50.837],[-126.418,50.85],[-126.488,50.842],[-126.5,50.921],[-126.485,50.961],[-126.5,51.006],[-126.5,55.2]],[[-126.5,50.491],[-126.204,50.454],[-125.839,50.381],[-125.615,50.359],[-125.534,50.342],[-125.482,50.317],[-125.42,50.255],[-125.314,50.107],[-125.233,50.012],[-125.066,49.848],[-124.935,49.732],[-124.905,49.685],[-124.932,49.67],[-124.931,49.643],[-124.831,49.53],[-124.643,49.429],[-124.496,49.38],[-124.186,49.301],[-123.996,49.224],[-123.937,49.171],[-123.855,49.119],[-123.82,49.084],[-123.752,48.951],[-123.627,48.824],[-123.497,48.582],[-123.473,48.602],[-123.458,48.674],[-123.443,48.69],[-123.415,48.698],[-123.39,48.67],[-123.366,48.606],[-123.284,48.455],[-123.311,48.411],[-123.335,48.406],[-123.446,48.427],[-123.485,48.4],[-123.536,48.345],[-123.573,48.323],[-123.595,48.334],[-123.917,48.387],[-124.115,48.436],[-124.376,48.515],[-124.689,48.597],[-124.868,48.654],[-125.017,48.711],[-125.121,48.761],[-125.14,48.803],[-125.136,48.822],[-124.935,48.956],[-124.85,49.028],[-124.817,49.083],[-124.8,49.142],[-124.813,49.213],[-124.839,49.139],[-124.868,49.079],[-124.904,49.031],[-124.927,49.014],[-125.168,48.991],[-125.363,48.998],[-125.46,48.941],[-125.489,48.934],[-125.543,48.953],[-125.66,49.029],[-125.829,49.092],[-125.812,49.107],[-125.702,49.139],[-125.644,49.186],[-125.694,49.19],[-125.728,49.2],[-125.796,49.26],[-125.835,49.277],[-125.918,49.25],[-125.952,49.248],[-125.984,49.288],[-125.938,49.38],[-125.935,49.401],[-126.02,49.368],[-126.048,49.379],[-126.075,49.409],[-126.1,49.421],[-126.169,49.415],[-126.244,49.443],[-126.27,49.432],[-126.28,49.392],[-126.304,49.382],[-126.419,49.449],[-126.445,49.451],[-126.5,49.4],[-126.5,49.603],[-126.443,49.619],[-126.158,49.65],[-126.134,49.672],[-126.348,49.661],[-126.403,49.678],[-126.463,49.72],[-126.5,49.72]]],"ab":[[[-112.5,55.2],[-112.5,48.993],[-112.88,48.993],[-113.306,48.993],[-113.732,48.993],[-114.063,48.993],[-114.051,49.015],[-114.057,49.038],[-114.133,49.094],[-114.164,49.147],[-114.19,49.168],[-114.355,49.211],[-114.378,49.232],[-114.386,49.252],[-114.426,49.274],[-114.48,49.333],[-114.565,49.394],[-114.588,49.42],[-114.59,49.452],[-114.576,49.519],[-114.577,49.544],[-114.602,49.551],[-114.681,49.556],[-114.717,49.569],[-114.734,49.587],[-114.686,49.643],[-114.643,49.73],[-114.638,49.797],[-114.685,49.934],[-114.678,49.955],[-114.651,49.985],[-114.652,50.02],[-114.668,50.061],[-114.716,50.129],[-114.789,50.359],[-114.993,50.545],[-115.048,50.577],[-115.091,50.585],[-115.128,50.585],[-115.189,50.557],[-115.222,50.563],[-115.267,50.594],[-115.305,50.635],[-115.308,50.656],[-115.311,50.697],[-115.335,50.72],[-115.36,50.729],[-115.386,50.726],[-115.433,50.756],[-115.634,50.855],[-115.588,50.909],[-115.596,50.936],[-115.619,50.962],[-115.794,51.07],[-115.94,51.102],[-115.998,51.13],[-116.014,51.151],[-116.035,51.218],[-116.054,51.237],[-116.135,51.266],[-116.176,51.297],[-116.25,51.323],[-116.279,51.348],[-116.31,51.448],[-116.377,51.497],[-116.411,51.544],[-116.458,51.574],[-116.502,51.615],[-116.567,51.651],[-116.634,51.758],[-116.674,51.791],[-116.718,51.8],[-116.758,51.789],[-116.791,51.771],[-116.808,51.753],[-116.815,51.722],[-116.913,51.714],[-116.939,51.736],[-117.037,51.886],[-117.077,51.926],[-117.245,52.047],[-117.32,52.156],[-117.348,52.159],[-117.385,52.144],[-117.587,52.142],[-117.751,52.208],[-117.788,52.233],[-117.822,52.272],[-117.735,52.353],[-117.732,52.383],[-117.758,52.395],[-117.883,52.43],[-118.002,52.486],[-118.029,52.466],[-118.044,52.427],[-118.06,52.413],[-118.191,52.384],[-118.221,52.386],[-118.243,52.409],[-118.247,52.441],[-118.225,52.483],[-118.266,52.518],[-118.288,52.562],[-118.35,52.623],[-118.319,52.674],[-118.33,52.709],[-118.358,52.742],[-118.413,52.784],[-118.428,52.836],[-118.477,52.879],[-118.502,52.888],[-118.605,52.895],[-118.631,52.909],[-118.668,52.972],[-118.678,53.026],[-118.731,53.058],[-118.766,53.065],[-118.774,53.122],[-118.804,53.153],[-118.914,53.212],[-118.993,53.236],[-119.016,53.204],[-119.022,53.139],[-119.046,53.144],[-119.261,53.209],[-119.309,53.242],[-119.4,53.353],[-119.435,53.362],[-119.592,53.372],[-119.648,53.363],[-119.68,53.371],[-119.723,53.4],[-119.82,53.491],[-119.855,53.509],[-119.894,53.516],[-119.896,53.567],[-119.921,53.602],[-119.887,53.615],[-119.743,53.615],[-119.735,53.634],[-119.812,53.699],[-119.885,53.708],[-119.904,53.723],[-119.917,53.77],[-119.973,53.797],[-120.001,53.844],[-120.001,54.229],[-120.001,54.613],[-120.001,54.998],[-120.001,55.2]]],"rivers":{"Columbia":[[[-118.072,48.664],[-118.174,48.512],[-118.198,48.404],[-118.168,48.232]],[[-118.092,49.802],[-118.13,49.664],[-118.128,49.574],[-118.097,49.484],[-118.014,49.404],[-117.907,49.342]],[[-117.906,50.682],[-117.917,50.465],[-117.892,50.339],[-117.837,50.231],[-117.827,50.159],[-117.88,50.103]],[[-118.168,48.232],[-118.232,48.086],[-118.284,48.035],[-118.346,48.032],[-118.368,47.996],[-118.349,47.927],[-118.351,47.879],[-118.375,47.849],[-118.433,47.857],[-118.525,47.903],[-118.665,47.927],[-118.854,47.93],[-118.983,47.982],[-119.052,48.082],[-119.228,48.101],[-119.511,48.04],[-119.681,48.03],[-119.74,48.073],[-119.801,48.085],[-119.864,48.066],[-119.887,48.029],[-119.868,47.975],[-119.87,47.929],[-119.894,47.891],[-119.969,47.813],[-120.04,47.783],[-120.14,47.763],[-120.214,47.693],[-120.262,47.575],[-120.273,47.487],[-120.248,47.429],[-120.194,47.382],[-120.068,47.329]],[[-117.907,49.342],[-117.721,49.331],[-117.676,49.275],[-117.711,49.172],[-117.701,49.098],[-117.648,49.055],[-117.682,49.015],[-117.717,48.975],[-117.908,48.858],[-118.021,48.766],[-118.074,48.663]],[[-117.88,50.103],[-117.917,50.092],[-117.925,50.064],[-117.915,50.016],[-117.95,49.971],[-118.029,49.929],[-118.074,49.881],[-118.092,49.802]],[[-115.865,50.287],[-116.081,50.591],[-116.224,50.758],[-116.365,50.89],[-116.545,51.01],[-116.762,51.12],[-116.931,51.244],[-117.052,51.383],[-117.183,51.471],[-117.324,51.507],[-117.425,51.558],[-117.517,51.659]],[[-118.527,52.102],[-118.581,52.052],[-118.595,51.999],[-118.589,51.925],[-118.611,51.858],[-118.661,51.796],[-118.681,51.742],[-118.672,51.696],[-118.599,51.59],[-118.463,51.426],[-118.359,51.323],[-118.289,51.281],[-118.237,51.214],[-118.205,51.12],[-118.195,51.049],[-118.208,51.0],[-118.138,50.903],[-117.906,50.683]]],"Athabasca":[[[-117.575,52.171],[-117.543,52.209],[-117.552,52.271],[-117.645,52.456],[-117.674,52.537],[-117.727,52.578],[-117.814,52.606],[-117.864,52.647],[-117.878,52.701],[-117.926,52.757],[-118.007,52.815],[-118.045,52.872],[-118.039,52.929],[-118.052,52.977],[-118.084,53.018],[-118.036,53.113],[-117.907,53.263],[-117.679,53.415],[-117.354,53.57],[-117.184,53.676],[-117.17,53.735],[-117.173,53.775],[-117.193,53.796],[-117.172,53.839],[-117.108,53.907],[-116.924,54.01],[-116.617,54.151],[-116.414,54.228],[-116.315,54.243],[-116.133,54.224],[-115.868,54.172],[-115.615,54.149],[-115.373,54.155],[-115.176,54.2],[-115.021,54.285],[-114.859,54.331],[-114.689,54.34],[-114.536,54.39],[-114.399,54.481],[-114.332,54.565],[-114.336,54.642],[-114.265,54.804],[-114.049,55.174]],[[-113.599,55.172],[-113.466,55.018],[-113.413,54.901],[-113.44,54.822],[-113.41,54.771],[-113.324,54.748],[-113.259,54.773],[-113.215,54.846],[-113.077,54.909],[-112.846,54.961],[-112.733,55.0],[-112.739,55.028],[-112.772,55.05],[-112.834,55.066],[-112.85,55.116],[-112.82,55.198]]],"Fraser":[[[-118.319,52.522],[-118.572,52.762],[-118.601,52.825],[-118.721,52.891],[-118.941,52.983],[-119.175,53.023],[-119.425,53.009],[-119.669,53.056],[-119.906,53.161],[-120.244,53.346],[-120.681,53.609],[-121.024,53.778],[-121.396,53.889],[-121.584,53.93],[-121.649,53.963],[-121.654,54.002],[-121.738,54.061],[-121.903,54.141],[-122.089,54.201],[-122.295,54.24],[-122.435,54.245],[-122.509,54.215],[-122.551,54.174],[-122.56,54.121],[-122.611,54.046],[-122.704,53.947],[-122.744,53.816],[-122.733,53.652],[-122.708,53.534],[-122.67,53.461],[-122.709,53.399],[-122.827,53.348],[-122.804,53.266],[-122.64,53.153],[-122.53,53.042],[-122.475,52.932],[-122.457,52.798],[-122.475,52.642],[-122.436,52.508],[-122.34,52.395],[-122.285,52.259],[-122.27,52.097],[-122.272,51.99],[-122.29,51.937],[-122.321,51.902],[-122.365,51.884],[-122.392,51.846],[-122.408,51.758],[-122.268,51.519],[-122.225,51.407],[-122.232,51.345],[-122.143,51.221],[-121.955,51.038],[-121.858,50.901],[-121.85,50.812],[-121.866,50.766],[-121.906,50.763],[-121.924,50.74],[-121.92,50.698],[-121.86,50.615],[-121.744,50.491],[-121.628,50.302],[-121.51,50.047],[-121.449,49.791],[-121.445,49.532],[-121.49,49.387],[-121.582,49.354],[-121.652,49.307],[-121.698,49.246],[-121.874,49.19],[-122.179,49.139],[-122.445,49.141],[-122.673,49.197],[-122.85,49.207],[-123.041,49.151],[-123.08,49.131]]],"North Saskatchewan":[[[-117.132,52.014],[-117.011,52.077],[-116.937,52.072],[-116.838,51.993],[-116.534,52.022],[-116.438,52.079],[-116.448,52.176],[-116.39,52.276],[-116.262,52.379],[-116.053,52.437],[-115.764,52.453],[-115.576,52.44],[-115.488,52.399],[-115.398,52.387],[-115.308,52.404],[-115.211,52.393],[-115.108,52.355],[-115.029,52.345],[-114.975,52.363],[-114.984,52.463],[-115.057,52.644],[-115.111,52.74],[-115.146,52.752],[-115.164,52.785],[-115.166,52.838],[-115.184,52.875],[-115.218,52.895],[-115.227,52.94],[-115.211,53.01],[-115.159,53.05],[-115.071,53.061],[-115.014,53.083],[-114.974,53.131],[-114.841,53.276],[-114.729,53.321],[-114.596,53.314],[-114.483,53.338],[-114.388,53.392],[-114.262,53.396],[-114.104,53.348],[-113.947,53.333],[-113.789,53.35],[-113.691,53.389],[-113.651,53.451],[-113.569,53.5],[-113.445,53.536],[-113.306,53.628],[-113.153,53.777],[-113.024,53.876],[-112.919,53.926],[-112.856,53.975],[-112.834,54.023],[-112.732,54.032],[-112.55,54.003]]]},"lakes":[{"name":"Lower Arrow Lake","ring":[[-117.907,49.342],[-117.957,49.336],[-118.063,49.412],[-118.096,49.45],[-118.139,49.521],[-118.156,49.601],[-118.138,49.703],[-118.128,49.752],[-118.092,49.802],[-118.084,49.774],[-118.109,49.583],[-118.088,49.515],[-118.048,49.457],[-117.976,49.406],[-117.911,49.375],[-117.907,49.342]]},{"name":"Lower Arrow Lake","ring":[[-117.907,49.342],[-117.957,49.336],[-118.063,49.412],[-118.096,49.45],[-118.139,49.521],[-118.156,49.601],[-118.138,49.703],[-118.128,49.752],[-118.092,49.802],[-118.084,49.774],[-118.109,49.583],[-118.088,49.515],[-118.048,49.457],[-117.976,49.406],[-117.911,49.375],[-117.907,49.342]]},{"name":"Kinbasket Lake","ring":[[-118.402,52.172],[-118.287,52.159],[-118.18,52.178],[-118.218,52.129],[-118.322,52.103],[-118.366,52.09],[-118.392,52.069],[-118.448,52.06],[-118.499,52.069],[-118.527,52.102],[-118.551,52.241],[-118.642,52.332],[-118.751,52.404],[-118.89,52.549],[-119.128,52.739],[-119.058,52.727],[-118.931,52.618],[-118.677,52.411],[-118.565,52.303],[-118.402,52.172]]}]};
+
+  const GULF_ISLANDS = [
+    {n:"San Juan Island", lat:48.53, lon:-123.02},
+    {n:"Saturna Island", lat:48.78, lon:-123.20},
+    {n:"Salt Spring Island", lat:48.83, lon:-123.50}
+  ];
+
+  const DISPUTE_SITES = [
+    {n:"Tiny House Warriors camp (approx., near Blue River)", lat:52.05, lon:-119.36,
+     note:"Secwépemc-led land-defense camp founded by Kanahus Manuel to oppose TMX; site of a 2020 attack investigated by RCMP."},
+    {n:"Pípsell / Jacko Lake (approx.)", lat:50.60, lon:-120.56,
+     note:"Sacred Secwépemc site; SSN agreed to trenchless construction here in 2019, then formally opposed the CER's 2023 approval of open-cut trenching instead."},
+    {n:"Coldwater aquifer / 2021 reroute (near Kingsvale)", lat:49.91, lon:-120.91,
+     note:"Coldwater Indian Band's Federal Court challenge (2017 FCA 199) over aquifer risk led to an 18 km reroute approved by the CER in 2021."},
+    {n:"Lightning Rock (approx., near Sumas/Abbotsford)", lat:49.03, lon:-122.20,
+     note:"Sumas First Nation sacred/burial site; TMX changed construction method here after Sumas raised opposition."},
+    {n:"Katzie stop-work sites (approx., Langley/Maple Ridge)", lat:49.14, lon:-122.60,
+     note:"Katzie First Nation ordered Trans Mountain to halt work at two unceded village sites, Feb. 17, 2023."}
+  ];
+
+  /* Landmarks geocoded via OpenStreetMap Nominatim, used as real anchor points for
+     each Nation's broader (not just pipeline-corridor) territory extent. */
+  const L = {
+    grandeCache:      {lat:53.889, lon:-119.119},
+    hinton:            {lat:53.41,  lon:-117.56},
+    jasper:            {lat:52.87,  lon:-118.08},
+    mtRobson:          {lat:53.03,  lon:-119.15},
+    teteJauneCache:    {lat:52.95,  lon:-119.43},
+    valemount:         {lat:52.83,  lon:-119.28},
+    blueRiver:         {lat:52.10,  lon:-119.30},
+    clearwater:        {lat:51.65,  lon:-120.03},
+    barriere:          {lat:51.18,  lon:-120.13},
+    kamloops:          {lat:50.68,  lon:-120.34},
+    mcBride:           {lat:53.304, lon:-120.164},
+    golden:            {lat:51.299, lon:-116.964},
+    invermere:         {lat:50.505, lon:-116.030},
+    nakusp:            {lat:50.240, lon:-117.797},
+    trail:             {lat:49.095, lon:-117.710},
+    tasekoLakes:       {lat:51.235, lon:-123.588},
+    merritt:           {lat:50.11,  lon:-120.79},
+    princeton:         {lat:49.460, lon:-120.508},
+    bostonBar:         {lat:49.868, lon:-121.443},
+    lytton:            {lat:50.231, lon:-121.582},
+    spencesBridge:     {lat:50.423, lon:-121.344},
+    ashcroft:          {lat:50.721, lon:-121.284},
+    yale:              {lat:49.564, lon:-121.432},
+    hope:              {lat:49.38,  lon:-121.44},
+    harrisonHotSprings:{lat:49.299, lon:-121.785},
+    agassiz:           {lat:49.233, lon:-121.767},
+    chilliwack:        {lat:49.17,  lon:-121.95},
+    mission:           {lat:49.159, lon:-122.284},
+    abbotsford:        {lat:49.04,  lon:-122.15},
+    langley:           {lat:49.10,  lon:-122.66},
+    pittMeadows:       {lat:49.221, lon:-122.690},
+    barnstonIsland:    {lat:49.197, lon:-122.704},
+    surrey:            {lat:49.11,  lon:-122.83},
+    coquitlam:         {lat:49.22,  lon:-122.81},
+    coquitlamLake:     {lat:49.407, lon:-122.781},
+    burnaby:           {lat:49.28,  lon:-122.94},
+    westridge:         {lat:49.29,  lon:-122.95},
+    deepCove:          {lat:49.329, lon:-122.943},
+    howeSound:         {lat:49.450, lon:-123.438},
+    mtGaribaldi:       {lat:49.850, lon:-123.005},
+    whistler:          {lat:50.117, lon:-122.954},
+    squamishTown:      {lat:49.698, lon:-123.156},
+    britanniaBeach:    {lat:49.626, lon:-123.206},
+    pointGrey:         {lat:49.27,  lon:-123.26},
+    richmond:          {lat:49.18,  lon:-123.18},
+    steveston:         {lat:49.13,  lon:-123.18},
+    tsawwassen:        {lat:49.01,  lon:-123.13},
+    williamsLake:      {lat:52.129, lon:-122.140},
+    alexisCreek:       {lat:52.084, lon:-123.277},
+    loganLake:         {lat:50.494, lon:-120.813},
+    lillooet:          {lat:50.694, lon:-121.934},
+    quesnel:           {lat:52.979, lon:-122.494},
+    tsawwassenFN:      {lat:49.036, lon:-123.106},
+    robertsBank:       {lat:49.054, lon:-123.118},
+    boundaryBay:       {lat:49.02,  lon:-122.92},
+    pointRoberts:      {lat:48.98,  lon:-123.08}
+  };
+
+  const TERRITORIES = [
+    {id:"t6", name:"Treaty 6 Nations (Edmonton area)", color:"var(--s1)", kind:"path", width:60,
+     path:["wabamun_lit","stonyPlain_lit","edmonton_lit","edmontonTerminal_lit"],
+     status:"mba", statusLabel:"MBA / consultation",
+     blurb:"Enoch Cree Nation, Alexander First Nation, Alexis Nakota Sioux Nation, Paul First Nation (Wabamun), and Métis Nation of Alberta Region 3 hold Treaty 6 and Métis interests around Edmonton.",
+     detail:"Enoch Cree Nation's reserve borders the pipeline right-of-way west of Edmonton; the Nation held a 2018 blessing ceremony for a TMX construction-staging site and holds a mutual benefits agreement. No Treaty 6 Nation here is documented as having litigated against TMX; engagement has been through consultation, monitoring funding, and benefit agreements. Alexander and Alexis Nakota Sioux are regional Treaty 6 stakeholders; direct on-route crossing of their reserves is less clearly documented than Enoch's. Shown at a regional scale around Edmonton, not the full historical Treaty 6 territory (which extends across much of central Alberta and Saskatchewan).",
+     sources:[["CBC: Enoch Cree blessing ceremony, 2018","https://www.cbc.ca/news/canada/edmonton/enoch-cree-stockpile-site-blessing-pipeline-trans-mountain-1.4764672"],["Canada.ca news release, 2018","https://www.canada.ca/en/natural-resources-canada/news/2018/07/trans-mountain-expansion-project-worksite-receives-blessing-from-enoch-cree-nation.html"]]},
+    {id:"awn", name:"Aseniwuche Winewak Nation", color:"var(--s2)", kind:"path", width:75,
+     path:["grandeCache","hinton","jasper","mtRobson"],
+     status:"disputed", statusLabel:"Land-access dispute",
+     blurb:"Self-described 'Rocky Mountain People' (Cree/Iroquois/Sekani/Dene/Ojibwe/Assiniboine/Shuswap descent) removed from the Jasper area when Jasper National Park was created (1907, some sources say 1911); today based around Grande Cache.",
+     detail:"AWN is not a Treaty 8 signatory and many members lack Indian Act status. Parks Canada's own materials acknowledge Jasper NP sits on AWN traditional lands among others. AWN received federal funding in 2021 explicitly framed as a TMX accommodation measure and filed directly with the NEB on the project. In 2023-24, AWN publicly called on Parks Canada to restore park access and prioritize co-management: a dispute about the historic eviction, running alongside (not against) the pipeline consultation record.",
+     sources:[["Aseniwuche Winewak Nation: official site","https://www.aseniwuche.ca/the-nation/"],["Global News, 2024, on Jasper access calls","https://globalnews.ca/news/10061446/jasper-national-park-hunting-aseniwuche-winewak-nation/"]]},
+    {id:"simpcw", name:"Simpcw First Nation (Secwépemc)", color:"var(--s3)", kind:"path", width:95,
+     path:["jasper","mtRobson","teteJauneCache","valemount","blueRiver","clearwater","barriere","kamloops"],
+     status:"mba", statusLabel:"MBA signed (2016)",
+     blurb:"Simpcw describes its territory (Simpcwúl̓ecw) as ~5,000,000 hectares extending east into the Jasper/Athabasca-headwaters area and covering the North Thompson valley down to Kamloops, roughly a third of the pipeline's BC route.",
+     detail:"Simpcw negotiated a mutual benefits agreement with Kinder Morgan from 2015, approved by a March 2016 membership referendum (78% in favour), one of the original ~43 MBA signatories. Simpcw later sought to renegotiate terms. Separately, Simpcw has formally disputed Parks Canada's position that Aboriginal title in Jasper National Park was surrendered or extinguished, asserting oral history, archaeological, and Hudson's Bay Company documentary evidence of unextinguished title: an active, unresolved legal question distinct from the pipeline consultation itself.",
+     sources:[["Simpcw First Nation: official site","https://simpcw.com/about-us/"],["Business in Vancouver, on the 2016 MBA","https://www.biv.com/news/resources-agriculture/simpcw-first-nation-supports-trans-mountain-8252577"],["BC EAO background doc on the Jasper title dispute","https://projects.eao.gov.bc.ca/api/document/58923185b637cc02bea1644a/fetch"]]},
+    {id:"secwepemc", name:"Secwépemc Nation (broader territory)", color:"var(--s4)", kind:"poly", targetKm2:180000,
+     poly:["mcBride","golden","invermere","trail","loganLake","ashcroft","lillooet","tasekoLakes","alexisCreek","williamsLake","quesnel"],
+     status:"mixed", statusLabel:"Mixed: MBA, litigation, opposition",
+     blurb:"Secwepemcúl'ecw: per the Shuswap Nation Tribal Council's 2012 Unity Declaration, 17 communities across ~180,000 km². SNTC's own materials give the area and community count but not a single closed-perimeter map; this outline instead follows the fuller cardinal-extent description published by Tk'emlúps te Secwépemc and the Secwepemc Cultural Education Society (Columbia River/Rockies east, Fraser River west, upper Fraser/Cariboo-Chilcotin Plateau north, Arrow Lakes south).",
+     detail:"Within this broader area, Stk'emlupsemc te Secwépemc Nation (SSN, the joint governance body of Tk'emlúps te Secwépemc and Skeetchestn) signed a 2019 mutual benefits agreement conditioned on trenchless construction through the sacred Pípsell (Jacko Lake) corridor near Kamloops, then formally opposed the CER's 2023 approval of open-cut trenching there instead (completed Feb. 2024). Whispering Pines/Clinton signed a separate MBA. Neskonlith never signed and its Kukpi7 (Chief) publicly stated the Nation does not consent. Simpcw (shown separately, above) is itself a Secwépemc community with its own more specific North Thompson valley territory nested inside this broader area: an intentional overlap, not a mapping error. The 17 Secwépemc communities span three tribal-council groupings (Shuswap Nation Tribal Council, Northern Shuswap Tribal Council, and four independents), from Simpcw/Barriere in the north-central valley to Shuswap Band/Kenpésq't near Invermere in the far east and High Bar/Ts'kw'aylaxw near Lillooet in the southwest.",
+     sources:[["Shuswap Nation Tribal Council, Secwepemc Nation Unity Declaration (2012)","https://shuswapnation.org/files/2018/06/39.-Secwepemc-Nation-Unity-Declaration-June-22-2012.pdf"],["Tk'emlúps te Secwépemc, \"Our Land\"","https://tkemlups.ca/our-land/"],["The Tyee, Feb. 2024, on the Pípsell trenching decision","https://thetyee.ca/News/2024/02/29/Why-Did-Trans-Mountain-Dig-Through-Indigenous-Burial-Site/"],["IndigiNews on the CER's 2023 approval","https://indiginews.com/features/regulator-approves-tmx-to-trench-through-extremely-sacred-secwepemcsite"],["Kukpi7 Judy Wilson (Neskonlith) letter, 2020","https://mediacoop.ca/story/letter-continued-racism-and-discrimination-secw%C3%A9pe/36959"],["Daily Hive (2015) on the SSN title-claim perimeter","https://dailyhive.com/vancouver/secwepemc-first-nation-aboriginal-title-claim-bc-kamloops-sun-peaks"]]},
+    {id:"nlakapamux", name:"Nlaka'pamux / Scw'exmx Tribal Council", color:"var(--s5)", kind:"path", width:85,
+     path:["bostonBar","lytton","spencesBridge","ashcroft","merritt","princeton"],
+     status:"litigated", statusLabel:"Litigated (Federal Court)",
+     blurb:"Coldwater Indian Band, Nooaitch, Upper Nicola, Lower Nicola, and Shackan hold territory through the Fraser Canyon, Nicola Valley, and Similkameen; governed regionally by the Scw'exmx Tribal Council (formerly the Nicola Tribal Association) and, further down the Fraser Canyon, the Nlaka'pamux Nation Tribal Council.",
+     detail:"Coldwater Indian Band won Coldwater Indian Band v. Canada, 2017 FCA 199, which found Canada breached a fiduciary duty by not properly scrutinizing aquifer risk before consenting to the pipeline easement assignment. Coldwater, alongside Squamish and Tsleil-Waututh, later lost a second-round challenge in Coldwater Indian Band v. Canada (AG), 2020 FCA 34 (leave to appeal to the SCC denied, July 2020). The CER approved an 18 km 'West Alternate Route' around the Coldwater aquifer in 2021. Upper Nicola litigated in the original 2018 FCA case, then signed its own agreement with Trans Mountain in Nov. 2019.",
+     sources:[["BLG summary of Coldwater v. Canada, 2017 FCA 199","https://www.blg.com/en/insights/2017/09/coldwater-indian-band-v-canada-aboriginal-affairs-and-northern-development-2017-fca-199"],["Torys summary of 2020 FCA 34","https://www.torys.com/insights/publications/2020/02/federal-court-of-appeal-upholds-approval-for-the-trans-mountain-expansion-project"],["Radio NL on the 2021 reroute","https://www.radionl.com/2021/08/25/trans-mountain-pipeline-expansion-to-be-rerouted-around-coldwater-indian-band/"]]},
+    {id:"stolo", name:"Stó:lō &amp; Fraser Valley / Lower Mainland Nations", color:"var(--s6)", kind:"path", width:80,
+     path:["yale","hope","harrisonHotSprings","agassiz","chilliwack","mission","abbotsford","langley","pittMeadows","barnstonIsland"],
+     status:"mixed", statusLabel:"Mixed: MBA, litigation, opposition",
+     blurb:"Chawathil, Cheam, Matsqui, Sumas, Seabird Island and other Stó:lō communities (via the project-specific 'Stó:lō Collective'), plus the independently-governed Kwantlen First Nation and Katzie First Nation, hold territory from Yale through Chilliwack, Abbotsford, Langley, and the Pitt River area.",
+     detail:"BC's environmental assessment office found roughly 195 km of pipeline route runs through the Stó:lō Collective's asserted territory. Cheam, Matsqui, and Seabird Island signed support agreements; Chawathil and Skawahlook were parties to Federal Court litigation. Sumas First Nation opposed construction near the sacred Lightning Rock site (resolved via a construction-method change) and demanded an independent probe after a 2020 pipeline spill on its territory. Kwantlen litigated and never signed an MBA, asserting title over the Salmon River area. Katzie ordered Trans Mountain to halt work at two unceded village sites in Feb. 2023, citing inadequate consultation.",
+     sources:[["BC EAO Appendix C-19: Stó:lō Collective","https://projects.eao.gov.bc.ca/api/public/document/5892318eb637cc02bea1647e/download/Appendix%20C-19%20-%20St%C3%B3:l%C3%B3%20Collective.pdf"],["CBC on Sumas &amp; the Lightning Rock site","https://www.cbc.ca/news/indigenous/sumas-first-nation-lightning-rock-tmx-1.5566941"],["BC EAO Appendix C.10: Kwantlen First Nation","https://www.projects.eao.gov.bc.ca/api/public/document/58923188b637cc02bea1645b/download/Appendix%20C.10"],["Local news on Katzie's Feb. 2023 stop-work order","https://www.langleyadvancetimes.com/news/katzie-first-nation-orders-trans-mountain-to-stop-work-on-their-land-2574546"]]},
+    {id:"tsleil", name:"Tsleil-Waututh Nation", color:"var(--s7)", kind:"poly", targetKm2:1865,
+     poly:["howeSound","mtGaribaldi","coquitlamLake","westridge","deepCove"],
+     status:"litigated", statusLabel:"Litigated (Federal Court)",
+     blurb:"'People of the Inlet': traditional territory (~1,865 km², per TWN's own site) centred on Burrard Inlet, extending to Mt. Garibaldi, Coquitlam Lake, and Howe Sound.",
+     detail:"Lead applicant in Tsleil-Waututh Nation v. Canada (AG), 2018 FCA 153, which quashed the original TMX approval over inadequate consultation and unassessed marine-shipping risk. Continued to litigate the 2019 re-approval through to a denied Supreme Court leave application in 2020. Maintains an active Burrard Inlet Action Plan and a $20M/10-year environmental stewardship agreement with Canada.",
+     sources:[["Tsleil-Waututh Nation: official site","https://twnation.ca/about/"],["Norton Rose Fulbright on 2018 FCA 153","https://www.nortonrosefulbright.com/en/knowledge/publications/33027c87/deja-vu-all-over-again-federal-court-of-appeal-rejects-trans-mountain-pipeline-expansion"]]},
+    {id:"squamish", name:"Squamish Nation", color:"var(--s8)", kind:"poly", targetKm2:6732,
+     poly:["whistler","squamishTown","britanniaBeach","howeSound","pointGrey","westridge","coquitlamLake","mtGaribaldi"],
+     status:"litigated", statusLabel:"Litigated (Federal &amp; provincial courts)",
+     blurb:"Sḵwx̱wú7mesh territory (6,732 km², per Squamish's own site) explicitly includes 'all of Howe Sound, Burrard Inlet, and English Bay,' reaching from Whistler down through Squamish to Vancouver, Burnaby, and Port Moody; overlapping Tsleil-Waututh and Musqueam territory at the terminus.",
+     detail:"Filed its own Federal Court challenge in 2016 and a separate BC Supreme Court challenge to the provincial environmental certificate (dismissed 2018); joined the multi-party 2018 FCA 153 and 2020 FCA 34 cases; sought (and was denied) Supreme Court leave to appeal in 2020 alongside Tsleil-Waututh and Coldwater. Leadership has publicly called federal reapproval a 'betrayal.'",
+     sources:[["Squamish Nation: official site","https://www.squamish.net/about-our-nation/our-land/"],["North Shore News on the 2020 SCC leave denial","https://www.nsnews.com/local-news/supreme-court-ends-squamish-and-tsleil-waututh-pipeline-appeal-3124530"]]}
+  ];
+
+  const MUSQUEAM_NOTE = {
+    name:"Musqueam Indian Band",
+    targetKm2:5330,
+    poly:["pointGrey","richmond","steveston","tsawwassen","surrey","coquitlam","westridge"],
+    blurb:"Musqueam's 1976 Declaration and current territory description include English Bay, Burrard Inlet, and Indian Arm down to the Fraser River delta; the same terminus area claimed by Tsleil-Waututh and Squamish, per Canada's 2025 Rights Recognition Agreement which explicitly names the overlap.",
+    detail:"Musqueam initially joined the judicial-review challenge against TMX but filed a notice of discontinuance in October 2017, the day the FCA hearing began, with a councillor stating litigation was no longer in the Nation's best interest. Rather than continuing court challenges, Musqueam has since pursued negotiated recognition, culminating in a 2025 federal Rights Recognition Agreement that explicitly names Musqueam's territory as overlapping with Squamish, Tsleil-Waututh, Tsawwassen, and Kwikwetlem territories.",
+    sources:[["Musqueam Indian Band: official site","https://www.musqueam.bc.ca/our-story/our-territory/"],["CBC on the 2025 Rights Recognition Agreement","https://www.cbc.ca/news/canada/british-columbia/canada-musqueam-title-agreements-vancouver-bc-9.7112809"]]
+  };
+
+  const TSAWWASSEN_NOTE = {
+    name:"Tsawwassen First Nation",
+    targetKm2:724,
+    poly:["tsawwassenFN","boundaryBay","pointRoberts","robertsBank"],
+    blurb:"Tsawwassen First Nation's 2009 treaty settlement lands (~724 hectares) sit directly on the Tsawwassen peninsula and Boundary Bay, immediately adjacent to the proposed Roberts Bank Delivery Terminal for the 2026 West Coast Oil Pipeline proposal.",
+    detail:"TFN's own July 2026 statement said the Nation 'has not been consulted on this proposal' and that it expects to be 'meaningfully involved from the earliest stages of planning and decision-making' if it proceeds, adding that national-interest designation 'does not diminish First Nations rights or consultation obligations.' TFN has taken no position for or against, pending review under its own Impact Assessment Framework. TFN's territory here overlaps Musqueam's broader claimed extent (shown above), consistent with the 2025 federal agreement naming Tsawwassen among Musqueam's neighbouring/overlapping territories.",
+    sources:[["Tsawwassen First Nation, official statement, July 2026","https://tsawwassenfirstnation.com/tsawwassen-first-nation-responds-to-proposed-southern-pipeline-route/"],["Daily Hive on TFN's response","https://dailyhive.com/vancouver/tsawwassen-first-nation-alberta-oil-pipeline-metro-vancouver-export-terminal"]]
+  };
+
+  const LIT = {
+    wabamun_lit: {lat:53.55, lon:-114.46},
+    stonyPlain_lit: {lat:53.53, lon:-114.00},
+    edmonton_lit: {lat:53.55, lon:-113.47},
+    edmontonTerminal_lit: {lat:53.52, lon:-113.31}
+  };
+  function landmark(key){ return L[key] || LIT[key]; }
+
+  const OVERLAPS = [
+    {title:"Jasper area", nations:"Aseniwuche Winewak Nation · Simpcw First Nation · Stoney Nakoda Nation",
+     text:"Parks Canada acknowledges Jasper National Park sits on the traditional lands of multiple peoples at once. Simpcw's own territorial description extends to the Athabasca headwaters near Jasper; a 2023 joint Simpcw-Stoney hunt renewing an 1895-era treaty was described by one Aseniwuche Winewak member as feeling like territorial pressure: evidence of live, unresolved overlap in this stretch, separate from the pipeline consultation itself."},
+    {title:"BC interior plateau", nations:"Secwépemc bands (SSN, Simpcw, Whispering Pines, Neskonlith, Adams Lake) · Nlaka'pamux",
+     text:"BC's own 'strength of claim' assessments for the Highland Valley area have reportedly favoured Nlaka'pamux nations over Stk'emlupsemc te Secwépemc in overlapping territory. Hihium Lake Indian Reserve No. 6 is shared among Upper Nicola, Lower Nicola, Bonaparte, and Tk'emlúps te Secwépemc: direct documentary evidence of Secwépemc/Nlaka'pamux territorial interleaving near the Kamloops-Merritt stretch of the route."},
+    {title:"Fraser Canyon near Hope", nations:"Stó:lō Nation · Yale First Nation (Nlaka'pamux)",
+     text:"A long-running, TMX-independent dispute over the Fraser Canyon 'Five Mile Fishery' area delayed Yale's 2016 treaty implementation; Stó:lō Grand Chief Doug Kelly has stated Stó:lō people have used the disputed area 'for more than 10,000 years.' The pipeline crosses precisely this contested stretch, which is worth noting even though the dispute predates and is separate from TMX consultation."},
+    {title:"Burrard Inlet / Westridge terminus", nations:"Tsleil-Waututh Nation · Squamish Nation · Musqueam Indian Band",
+     text:"The best-documented overlap on this route: all three Nations' own territorial descriptions claim Burrard Inlet/English Bay, and Canada's 2025 Rights Recognition Agreement with Musqueam explicitly names the overlap with Squamish and Tsleil-Waututh territory as an 'ongoing discussion.' Tsleil-Waututh and Squamish pursued litigation through to the Supreme Court; Musqueam withdrew from litigation in 2017 and later pursued a negotiated rights agreement instead: three Nations, three different legal paths, over the same water."},
+    {title:"Roberts Bank (proposed 2026 terminal)", nations:"Tsawwassen First Nation · Musqueam Indian Band · Lyackson First Nation · Union of BC Indian Chiefs",
+     text:"The newest flashpoint on this map, and unresolved. Tsawwassen First Nation says it 'has not been consulted' on the proposed Roberts Bank oil terminal, which would sit on/immediately beside its treaty lands. Musqueam is reportedly 'open to talks' but wants spill-protection clarity for the Fraser River it stewards. Lyackson hereditary chief Shana Thomas raised Salish Sea tanker-traffic risk and criticized the process. The Union of BC Indian Chiefs' Aug. 9, 2026 letter to the Prime Minister and Alberta's Premier calls the project to be halted, arguing that 'consultation cannot be meaningful if First Nations are invited only to discuss how a predetermined project will proceed.'"}
+  ];
+
+  const NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs){
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+
+  const LAT_MID = 51;
+  const latRad = LAT_MID * Math.PI/180;
+  function rawXY(lat, lon){ return {x: lon*Math.cos(latRad), y: -lat}; }
+
+  const allRaw = [];
+  ROUTE.forEach(p=>allRaw.push(rawXY(p.lat,p.lon)));
+  PROPOSED_SHARED.forEach(p=>allRaw.push(rawXY(p.lat,p.lon)));
+  PROPOSED_ORIGINAL.forEach(p=>allRaw.push(rawXY(p.lat,p.lon)));
+  PROPOSED_OPTIMIZED.forEach(p=>allRaw.push(rawXY(p.lat,p.lon)));
+  BASEMAP.bc.forEach(ring=>ring.forEach(([lo,la])=>allRaw.push(rawXY(la,lo))));
+  BASEMAP.ab.forEach(ring=>ring.forEach(([lo,la])=>allRaw.push(rawXY(la,lo))));
+  Object.values(L).forEach(p=>allRaw.push(rawXY(p.lat,p.lon)));
+  Object.values(LIT).forEach(p=>allRaw.push(rawXY(p.lat,p.lon)));
+  GULF_ISLANDS.forEach(p=>allRaw.push(rawXY(p.lat,p.lon)));
+
+  const minX = Math.min(...allRaw.map(p=>p.x));
+  const maxX = Math.max(...allRaw.map(p=>p.x));
+  const minY = Math.min(...allRaw.map(p=>p.y));
+  const maxY = Math.max(...allRaw.map(p=>p.y));
+
+  const VW = 1200, VH = 900, PAD = 40;
+  const scale = Math.min((VW-2*PAD)/(maxX-minX), (VH-2*PAD)/(maxY-minY));
+  const slackX = (VW-2*PAD) - (maxX-minX)*scale;
+  const slackY = (VH-2*PAD) - (maxY-minY)*scale;
+  function proj(lat, lon){
+    const r = rawXY(lat, lon);
+    return {
+      x: (r.x-minX)*scale + PAD + slackX/2,
+      y: (r.y-minY)*scale + PAD + slackY/2
+    };
+  }
+
+  function ptsToPath(pts, close){
+    let d = "M " + pts.map(p=>p.x.toFixed(1)+","+p.y.toFixed(1)).join(" L ");
+    if (close) d += " Z";
+    return d;
+  }
+
+  /* Closed Catmull-Rom spline through the given points, rendered as cubic
+     beziers: turns a handful of straight-edged landmark/ribbon vertices into
+     a rounded, organic-looking outline instead of a hard geometric polygon. */
+  function smoothClosedPath(pts){
+    const n = pts.length;
+    if (n < 3) return ptsToPath(pts, true);
+    let d = "";
+    for (let i=0;i<n;i++){
+      const p0 = pts[(i-1+n)%n], p1 = pts[i], p2 = pts[(i+1)%n], p3 = pts[(i+2)%n];
+      if (i===0) d += `M ${p1.x.toFixed(1)},${p1.y.toFixed(1)} `;
+      const c1x = p1.x + (p2.x-p0.x)/6, c1y = p1.y + (p2.y-p0.y)/6;
+      const c2x = p2.x - (p3.x-p1.x)/6, c2y = p2.y - (p3.y-p1.y)/6;
+      d += `C ${c1x.toFixed(1)},${c1y.toFixed(1)} ${c2x.toFixed(1)},${c2y.toFixed(1)} ${p2.x.toFixed(1)},${p2.y.toFixed(1)} `;
+    }
+    return d + "Z";
+  }
+
+  /* Uniformly scale a set of lat/lon points about their centroid so the
+     polygon's area matches a Nation's own cited figure; the landmark
+     vertices fix the shape/orientation, this fixes the scale. */
+  function areaKm2(latlons){
+    const lat0 = latlons.reduce((s,p)=>s+p.lat,0)/latlons.length;
+    const kmPts = latlons.map(p=>({x:p.lon*111.32*Math.cos(lat0*Math.PI/180), y:p.lat*110.57}));
+    let a = 0;
+    for (let i=0;i<kmPts.length;i++){
+      const p1 = kmPts[i], p2 = kmPts[(i+1)%kmPts.length];
+      a += p1.x*p2.y - p2.x*p1.y;
+    }
+    return Math.abs(a)/2;
+  }
+  function scaleToArea(latlons, targetKm2){
+    if (!targetKm2) return latlons;
+    const current = areaKm2(latlons);
+    const s = Math.sqrt(targetKm2/current);
+    const clat = latlons.reduce((sum,p)=>sum+p.lat,0)/latlons.length;
+    const clon = latlons.reduce((sum,p)=>sum+p.lon,0)/latlons.length;
+    return latlons.map(p=>({lat: clat+(p.lat-clat)*s, lon: clon+(p.lon-clon)*s}));
+  }
+
+  function bufferPath(latlons, width){
+    const seg = latlons.map(p=>proj(p.lat,p.lon));
+    const left = [], right = [];
+    for (let i=0;i<seg.length;i++){
+      const p = seg[i];
+      let dx, dy;
+      if (i===0){ dx = seg[i+1].x-p.x; dy = seg[i+1].y-p.y; }
+      else if (i===seg.length-1){ dx = p.x-seg[i-1].x; dy = p.y-seg[i-1].y; }
+      else { dx = seg[i+1].x-seg[i-1].x; dy = seg[i+1].y-seg[i-1].y; }
+      const len = Math.hypot(dx,dy) || 1;
+      const nx = -dy/len, ny = dx/len;
+      left.push({x:p.x+nx*width/2, y:p.y+ny*width/2});
+      right.push({x:p.x-nx*width/2, y:p.y-ny*width/2});
+    }
+    return left.concat(right.reverse());
+  }
+
+  function polyPoints(keys, targetKm2){
+    const latlons = keys.map(k=>landmark(k));
+    const scaled = scaleToArea(latlons, targetKm2);
+    return scaled.map(p=>proj(p.lat,p.lon));
+  }
+
+  /* Greedy label placer: tries a fixed ring of candidate offsets around each
+     anchor point and keeps the first one whose box doesn't overlap an
+     already-placed label. Order matters: call placeLabel() for the more
+     important labels first so they win the tight-in "upper right" slot. */
+  const measureCanvas = document.createElement("canvas").getContext("2d");
+  function textWidth(str, fontPx){
+    measureCanvas.font = fontPx + "px system-ui, -apple-system, Segoe UI, sans-serif";
+    return measureCanvas.measureText(str).width;
+  }
+  const placedBoxes = [];
+  function boxesOverlap(a, b, pad){
+    return !(a.x2+pad < b.x1 || b.x2+pad < a.x1 || a.y2+pad < b.y1 || b.y2+pad < a.y1);
+  }
+  function placeLabel(cx, cy, text, fontPx){
+    const w = textWidth(text, fontPx), h = fontPx * 1.05;
+    const candidates = [
+      {dx:6,  dy:-5,  anchor:"start"},
+      {dx:6,  dy:14,  anchor:"start"},
+      {dx:-6, dy:-5,  anchor:"end"},
+      {dx:-6, dy:14,  anchor:"end"},
+      {dx:0,  dy:-10, anchor:"middle"},
+      {dx:0,  dy:19,  anchor:"middle"},
+      {dx:9,  dy:-16, anchor:"start"},
+      {dx:9,  dy:24,  anchor:"start"},
+      {dx:-9, dy:-16, anchor:"end"},
+      {dx:-9, dy:24,  anchor:"end"}
+    ];
+    for (const c of candidates){
+      const tx = cx + c.dx, ty = cy + c.dy;
+      const x1 = c.anchor === "start" ? tx : c.anchor === "end" ? tx - w : tx - w/2;
+      const x2 = x1 + w;
+      const box = {x1, x2, y1: ty - h, y2: ty};
+      if (!placedBoxes.some(b => boxesOverlap(box, b, 2))){
+        placedBoxes.push(box);
+        return {x: tx, y: ty, anchor: c.anchor};
+      }
+    }
+    const c = candidates[0];
+    const tx = cx + c.dx, ty = cy + c.dy;
+    placedBoxes.push({x1: tx, x2: tx+w, y1: ty-h, y2: ty});
+    return {x: tx, y: ty, anchor: c.anchor};
+  }
+
+  function polyPointsFromKeys(keys, targetKm2){ return polyPoints(keys, targetKm2); }
+
+  const svg = document.getElementById("map");
+
+  const gGeo = el("g", {});
+  BASEMAP.ab.forEach(ring=>{
+    const pts = ring.map(([lo,la])=>proj(la,lo));
+    gGeo.appendChild(el("path", {d: ptsToPath(pts, true), class:"land-ab"}));
+  });
+  BASEMAP.bc.forEach(ring=>{
+    const pts = ring.map(([lo,la])=>proj(la,lo));
+    gGeo.appendChild(el("path", {d: ptsToPath(pts, true), class:"land-bc"}));
+  });
+  Object.values(BASEMAP.lakes).forEach(l=>{
+    const pts = l.ring.map(([lo,la])=>proj(la,lo));
+    gGeo.appendChild(el("path", {d: ptsToPath(pts, true), class:"water"}));
+  });
+  Object.entries(BASEMAP.rivers).forEach(([name, segs])=>{
+    segs.forEach(seg=>{
+      const pts = seg.map(([lo,la])=>proj(la,lo));
+      gGeo.appendChild(el("path", {d: ptsToPath(pts, false), class:"river"}));
+    });
+  });
+  svg.appendChild(gGeo);
+
+  const territoryGroup = el("g", {id:"territories"});
+  TERRITORIES.forEach(t=>{
+    const poly = t.kind === "poly" ? polyPoints(t.poly, t.targetKm2) : bufferPath(t.path.map(k=>landmark(k)), t.width);
+    const path = el("path", {
+      d: smoothClosedPath(poly),
+      class:"territory",
+      id:"zone-"+t.id,
+      style: "fill:"+t.color+";fill-opacity:0.5"
+    });
+    territoryGroup.appendChild(path);
+  });
+  svg.appendChild(territoryGroup);
+
+  const musqueamPoly = polyPoints(MUSQUEAM_NOTE.poly, MUSQUEAM_NOTE.targetKm2);
+  const musqueamPath = el("path", {d: smoothClosedPath(musqueamPoly), class:"terminus-overlap", id:"zone-musqueam"});
+  svg.appendChild(musqueamPath);
+
+  const tsawwassenPoly = polyPoints(TSAWWASSEN_NOTE.poly, TSAWWASSEN_NOTE.targetKm2);
+  const tsawwassenPath = el("path", {d: smoothClosedPath(tsawwassenPoly), class:"terminus-overlap proposed", id:"zone-tsawwassen"});
+  svg.appendChild(tsawwassenPath);
+
+  const routeSeg = ROUTE.map(p=>proj(p.lat,p.lon));
+  svg.appendChild(el("path", {d: ptsToPath(routeSeg,false), class:"route-line core"}));
+  svg.appendChild(el("path", {d: ptsToPath(routeSeg,false), class:"route-line"}));
+
+  const proposedGroup = el("g", {id:"proposed-route"});
+  const sharedSeg = PROPOSED_SHARED.map(p=>proj(p.lat,p.lon));
+  const originalSeg = sharedSeg.concat(PROPOSED_ORIGINAL.map(p=>proj(p.lat,p.lon)));
+  const optimizedSeg = sharedSeg.concat(PROPOSED_OPTIMIZED.map(p=>proj(p.lat,p.lon)));
+  proposedGroup.appendChild(el("path", {d: ptsToPath(originalSeg,false), class:"proposed-line core"}));
+  proposedGroup.appendChild(el("path", {d: ptsToPath(originalSeg,false), class:"proposed-line"}));
+  proposedGroup.appendChild(el("path", {d: ptsToPath(optimizedSeg,false), class:"proposed-line"}));
+  svg.appendChild(proposedGroup);
+
+  ROUTE.forEach(p=>{
+    const c = proj(p.lat,p.lon);
+    if (p.river || p.pass){
+      const g = el("g", {});
+      g.appendChild(el("circle", {cx:c.x, cy:c.y, r:3.2, class:"river-dot"}));
+      svg.appendChild(g);
+    }
+    if (p.label){
+      const g = el("g", {});
+      g.appendChild(el("circle", {cx:c.x, cy:c.y, r:3, class:"city-dot"}));
+      const label = p.n.replace(/,.*$/, "");
+      const pos = placeLabel(c.x, c.y, label, 10.5);
+      const t = el("text", {x:pos.x, y:pos.y, "text-anchor":pos.anchor, class:"city-label"});
+      t.textContent = label;
+      g.appendChild(t);
+      svg.appendChild(g);
+    }
+  });
+
+  [...PROPOSED_SHARED, ...PROPOSED_ORIGINAL].forEach(p=>{
+    if (!p.label) return;
+    const c = proj(p.lat,p.lon);
+    const g = el("g", {});
+    g.appendChild(el("circle", {cx:c.x, cy:c.y, r:3.4, class:"proposed-dot"}));
+    const label = p.n.replace(/,.*$/, "");
+    const pos = placeLabel(c.x, c.y, label, 10.5);
+    const t = el("text", {x:pos.x, y:pos.y, "text-anchor":pos.anchor, class:"proposed-label"});
+    t.textContent = label;
+    g.appendChild(t);
+    svg.appendChild(g);
+  });
+
+  const MAP_TEXT_LABELS = [
+    {n:"Alberta", lat:52.6, lon:-118.9},
+    {n:"British Columbia", lat:51.6, lon:-124.3},
+    {n:"Strait of Georgia", lat:49.5, lon:-124.2},
+    {n:"Vancouver Island", lat:49.3, lon:-124.5}
+  ];
+  MAP_TEXT_LABELS.forEach(m=>{
+    const c = proj(m.lat, m.lon);
+    const pos = placeLabel(c.x, c.y, m.n, 11);
+    const t = el("text", {x:pos.x, y:pos.y, "text-anchor":pos.anchor, class:"map-label"});
+    t.textContent = m.n;
+    svg.appendChild(t);
+  });
+
+  GULF_ISLANDS.forEach(p=>{
+    const c = proj(p.lat, p.lon);
+    const g = el("g", {});
+    g.appendChild(el("circle", {cx:c.x, cy:c.y, r:2.2, style:"fill:var(--text-muted)"}));
+    const pos = placeLabel(c.x, c.y, p.n, 11);
+    const t = el("text", {x:pos.x, y:pos.y, "text-anchor":pos.anchor, class:"map-label"});
+    t.textContent = p.n;
+    g.appendChild(t);
+    svg.appendChild(g);
+  });
+
+  DISPUTE_SITES.forEach(d=>{
+    const c = proj(d.lat, d.lon);
+    const g = el("g", {});
+    const dot = el("circle", {cx:c.x, cy:c.y, r:5, class:"dispute-dot"});
+    const title = el("title", {});
+    title.textContent = d.n + ": " + d.note;
+    dot.appendChild(title);
+    g.appendChild(dot);
+    svg.appendChild(g);
+  });
+
+  const legendRows = document.getElementById("legend-rows");
+  const detailPanel = document.getElementById("detail-panel");
+  const chipClass = {litigated:"chip-litigated", mba:"chip-mba", mixed:"chip-mixed", disputed:"chip-disputed"};
+
+  function renderDetail(t){
+    detailPanel.classList.add("show");
+    detailPanel.innerHTML =
+      "<h3>"+t.name+"</h3>" +
+      "<p>"+t.detail+"</p>" +
+      "<ul>"+t.sources.map(s=>'<li><a href="'+s[1]+'" target="_blank" rel="noopener">'+s[0]+"</a></li>").join("")+"</ul>";
+  }
+
+  TERRITORIES.forEach(t=>{
+    const row = document.createElement("div");
+    row.className = "leg-row";
+    row.innerHTML =
+      '<input type="checkbox" checked data-zone="'+t.id+'">' +
+      '<span class="swatch" style="background:'+t.color+'"></span>' +
+      '<span class="leg-text"><span class="leg-name">'+t.name+'</span><br>'+
+      '<span class="status-chip '+chipClass[t.status]+'">'+t.statusLabel+'</span><br>'+
+      '<span>'+t.blurb+'</span></span>';
+    row.querySelector(".leg-text").addEventListener("click", ()=>renderDetail(t));
+    const cb = row.querySelector("input");
+    cb.addEventListener("click", e=>e.stopPropagation());
+    cb.addEventListener("change", ()=>{
+      const zone = document.getElementById("zone-"+t.id);
+      zone.style.display = cb.checked ? "" : "none";
+    });
+    legendRows.appendChild(row);
+  });
+
+  const musRow = document.createElement("div");
+  musRow.className = "leg-row";
+  musRow.innerHTML =
+    '<input type="checkbox" checked data-zone="musqueam">' +
+    '<span class="swatch" style="background:#fff;border:1.6px dashed var(--text-primary)"></span>' +
+    '<span class="leg-text"><span class="leg-name">Musqueam Indian Band</span><br>' +
+    '<span class="status-chip chip-disputed">Negotiated recognition (2025)</span><br>' +
+    '<span>'+MUSQUEAM_NOTE.blurb+' Shown as an outline (not a fill) since its claim spatially coincides with Tsleil-Waututh and Squamish above.</span></span>';
+  musRow.querySelector(".leg-text").addEventListener("click", ()=>renderDetail(MUSQUEAM_NOTE));
+  const musCb = musRow.querySelector("input");
+  musCb.addEventListener("click", e=>e.stopPropagation());
+  musCb.addEventListener("change", ()=>{ musqueamPath.style.display = musCb.checked ? "" : "none"; });
+  legendRows.appendChild(musRow);
+
+  const legendRowsProposed = document.getElementById("legend-rows-proposed");
+
+  const routeRow = document.createElement("div");
+  routeRow.className = "leg-row";
+  routeRow.innerHTML =
+    '<input type="checkbox" checked data-zone="proposed-route-toggle">' +
+    '<span class="swatch" style="background:repeating-linear-gradient(90deg, var(--warning) 0 3px, transparent 3px 6px)"></span>' +
+    '<span class="leg-text"><span class="leg-name">West Coast Oil Pipeline (proposed)</span><br>' +
+    '<span class="status-chip chip-proposed">Announced Jul. 2026, not approved</span><br>' +
+    '<span>Bruderheim, AB &#8594; Roberts Bank, Delta, BC: ~1,211-1,250 km, 1,000,000 bpd, ~CAD $35.2-43.7B estimated. Follows the existing TMX corridor to Hope, then one of two reported corridor options (via Bridal Falls/Cultus Lake, or via Mission/Langley) to a new terminal at Roberts Bank. Referred to the federal Major Projects Office Aug. 1, 2026; national-interest listing decision expected ~Oct. 1, 2026. Proponents: Trans Mountain Corporation, Alberta Petroleum Marketing Commission, Pembina Pipeline Corporation.</span></span>';
+  const routeCb = routeRow.querySelector("input");
+  routeCb.addEventListener("click", e=>e.stopPropagation());
+  routeCb.addEventListener("change", ()=>{ proposedGroup.style.display = routeCb.checked ? "" : "none"; });
+  legendRowsProposed.appendChild(routeRow);
+
+  const tsawwassenRow = document.createElement("div");
+  tsawwassenRow.className = "leg-row";
+  tsawwassenRow.innerHTML =
+    '<input type="checkbox" checked data-zone="tsawwassen">' +
+    '<span class="swatch" style="background:#fff;border:1.6px dashed #b06a00"></span>' +
+    '<span class="leg-text"><span class="leg-name">Tsawwassen First Nation</span><br>' +
+    '<span class="status-chip chip-proposed">Says it has not been consulted</span><br>' +
+    '<span>'+TSAWWASSEN_NOTE.blurb+'</span></span>';
+  tsawwassenRow.querySelector(".leg-text").addEventListener("click", ()=>renderDetail(TSAWWASSEN_NOTE));
+  const tsawCb = tsawwassenRow.querySelector("input");
+  tsawCb.addEventListener("click", e=>e.stopPropagation());
+  tsawCb.addEventListener("change", ()=>{ tsawwassenPath.style.display = tsawCb.checked ? "" : "none"; });
+  legendRowsProposed.appendChild(tsawwassenRow);
+
+  const overlapGrid = document.getElementById("overlap-grid");
+  OVERLAPS.forEach(o=>{
+    const card = document.createElement("div");
+    card.className = "overlap-card";
+    card.innerHTML = "<h3>"+o.title+"</h3><div class='nations'>"+o.nations+"</div><p>"+o.text+"</p>";
+    overlapGrid.appendChild(card);
+  });
+
+  /* Zoom/pan: the whole map is drawn once into the fixed 0 0 1200 900
+     coordinate space above, so zooming is just moving a smaller viewBox
+     window over that same content — every dot, label, and territory stays
+     exactly where it was computed, at whatever scale the window shows. */
+  const HOME_VIEW = {x:0, y:0, w:VW, h:VH};
+  const MIN_W = VW / 10;
+  let view = {...HOME_VIEW};
+
+  function applyView(){
+    svg.setAttribute("viewBox", `${view.x} ${view.y} ${view.w} ${view.h}`);
+  }
+  function clampView(v){
+    v.w = Math.max(MIN_W, Math.min(VW, v.w));
+    v.h = v.w * (VH/VW);
+    v.x = Math.max(0, Math.min(VW - v.w, v.x));
+    v.y = Math.max(0, Math.min(VH - v.h, v.y));
+    return v;
+  }
+  function svgPoint(clientX, clientY){
+    const rect = svg.getBoundingClientRect();
+    const px = (clientX - rect.left) / rect.width;
+    const py = (clientY - rect.top) / rect.height;
+    return {x: view.x + px*view.w, y: view.y + py*view.h};
+  }
+  function zoomAt(clientX, clientY, factor){
+    const p = svgPoint(clientX, clientY);
+    const newW = view.w / factor;
+    const newH = newW * (VH/VW);
+    view = clampView({
+      x: p.x - (p.x - view.x) * (newW/view.w),
+      y: p.y - (p.y - view.y) * (newH/view.h),
+      w: newW, h: newH
+    });
+    applyView();
+  }
+
+  svg.addEventListener("wheel", e=>{
+    e.preventDefault();
+    const factor = e.deltaY < 0 ? 1.18 : 1/1.18;
+    zoomAt(e.clientX, e.clientY, factor);
+  }, {passive:false});
+
+  svg.addEventListener("dblclick", e=>{
+    e.preventDefault();
+    zoomAt(e.clientX, e.clientY, 1.9);
+  });
+
+  let dragging = false, dragStart = null, viewStart = null;
+  function startDrag(clientX, clientY){
+    dragging = true;
+    dragStart = {x:clientX, y:clientY};
+    viewStart = {...view};
+    svg.classList.add("dragging");
+  }
+  function moveDrag(clientX, clientY){
+    if (!dragging) return;
+    const rect = svg.getBoundingClientRect();
+    const dx = (clientX - dragStart.x) / rect.width * viewStart.w;
+    const dy = (clientY - dragStart.y) / rect.height * viewStart.h;
+    view = clampView({x: viewStart.x - dx, y: viewStart.y - dy, w: view.w, h: view.h});
+    applyView();
+  }
+  function endDrag(){
+    dragging = false;
+    svg.classList.remove("dragging");
+  }
+  svg.addEventListener("mousedown", e=>{ startDrag(e.clientX, e.clientY); });
+  window.addEventListener("mousemove", e=>{ if (dragging) moveDrag(e.clientX, e.clientY); });
+  window.addEventListener("mouseup", endDrag);
+
+  let pinchStartDist = null, pinchStartView = null;
+  function touchDist(t0, t1){ return Math.hypot(t1.clientX-t0.clientX, t1.clientY-t0.clientY); }
+  function touchMid(t0, t1){ return {x:(t0.clientX+t1.clientX)/2, y:(t0.clientY+t1.clientY)/2}; }
+  svg.addEventListener("touchstart", e=>{
+    if (e.touches.length === 1){
+      startDrag(e.touches[0].clientX, e.touches[0].clientY);
+    } else if (e.touches.length === 2){
+      dragging = false;
+      pinchStartDist = touchDist(e.touches[0], e.touches[1]);
+      pinchStartView = {...view};
+    }
+  }, {passive:true});
+  svg.addEventListener("touchmove", e=>{
+    if (e.touches.length === 1 && dragging){
+      e.preventDefault();
+      moveDrag(e.touches[0].clientX, e.touches[0].clientY);
+    } else if (e.touches.length === 2 && pinchStartDist){
+      e.preventDefault();
+      const dist = touchDist(e.touches[0], e.touches[1]);
+      const mid = touchMid(e.touches[0], e.touches[1]);
+      const factor = dist / pinchStartDist;
+      view = {...pinchStartView};
+      zoomAt(mid.x, mid.y, factor);
+    }
+  }, {passive:false});
+  svg.addEventListener("touchend", e=>{
+    if (e.touches.length === 0){ endDrag(); pinchStartDist = null; }
+  });
+
+  document.getElementById("zoom-in").addEventListener("click", ()=>{
+    const rect = svg.getBoundingClientRect();
+    zoomAt(rect.left+rect.width/2, rect.top+rect.height/2, 1.4);
+  });
+  document.getElementById("zoom-out").addEventListener("click", ()=>{
+    const rect = svg.getBoundingClientRect();
+    zoomAt(rect.left+rect.width/2, rect.top+rect.height/2, 1/1.4);
+  });
+  document.getElementById("zoom-reset").addEventListener("click", ()=>{
+    view = {...HOME_VIEW};
+    applyView();
+  });
+})();
+</script>
