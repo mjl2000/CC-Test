@@ -2065,7 +2065,11 @@
      window over that same content: every dot, label, and territory stays
      exactly where it was computed, at whatever scale the window shows. */
   const HOME_VIEW = {x:0, y:0, w:VW, h:VH};
-  const MIN_W = VW / 10;
+  /* 28x. The old 10x ceiling predates streamed imagery: it left the satellite
+     base unable to resolve anything smaller than about a 175 km wide view, which
+     is too coarse to look at Boundary Pass or the terminal. Tiles reach zoom 14,
+     well past what 28x asks for. */
+  const MIN_W = VW / 28;
   let view = {...HOME_VIEW};
 
   function applyView(){
@@ -2095,13 +2099,21 @@
     return {x: view.x + px*view.w, y: view.y + py*view.h};
   }
   function zoomAt(clientX, clientY, factor){
+    /* Clamp the width BEFORE recentring, not after. Clamping afterwards meant
+       that at the zoom limit the width snapped back to the limit but the
+       recentred x/y did not, so every further zoom attempt slid the view toward
+       the pointer instead of doing nothing: it read as the map refusing to zoom
+       and drifting southeast instead. Same applied at full extent when zooming
+       out. Pinch goes through here too, so it is fixed with it. */
+    const targetW = Math.max(MIN_W, Math.min(VW, view.w / factor));
+    if (Math.abs(targetW - view.w) < 1e-6) return;   // already at a limit
     const p = svgPoint(clientX, clientY);
-    const newW = view.w / factor;
-    const newH = newW * (VH/VW);
+    const k = targetW / view.w;                      // h tracks w, so one ratio
     view = clampView({
-      x: p.x - (p.x - view.x) * (newW/view.w),
-      y: p.y - (p.y - view.y) * (newH/view.h),
-      w: newW, h: newH
+      x: p.x - (p.x - view.x) * k,
+      y: p.y - (p.y - view.y) * k,
+      w: targetW,
+      h: targetW * (VH/VW)
     });
     applyView();
   }
