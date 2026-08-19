@@ -201,6 +201,23 @@
     display: none;
   }
   #map-callout.show { display: block; }
+  /* Labelled rather than an icon: the previous version hid the satellite base
+     behind a 30px "SAT" button in the zoom stack and defaulted it off, which
+     meant nobody found it. */
+  #basemap-switch {
+    position: absolute; top: 10px; left: 10px; z-index: 3;
+    display: flex; border-radius: 8px; overflow: hidden;
+    border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(11,11,11,0.20);
+    font-size: 0.74rem; font-weight: 600;
+  }
+  #basemap-switch button {
+    border: 0; padding: 7px 13px; cursor: pointer;
+    background: rgba(252,252,251,0.94); color: var(--text-secondary);
+    font: inherit;
+  }
+  #basemap-switch button + button { border-left: 1px solid var(--border); }
+  #basemap-switch button:hover { background: #fff; color: var(--text-primary); }
+  #basemap-switch button.active { background: #24211d; color: #fff; }
   #sat-credit {
     position: absolute; left: 8px; bottom: 6px; z-index: 2; display: none;
     font-size: 0.66rem; color: rgba(255,255,255,0.92);
@@ -320,13 +337,16 @@
             </filter>
           </defs>
         </svg>
-        <div id="map-callout"></div>
+        <div id="basemap-switch" role="group" aria-label="Basemap">
+        <button type="button" data-base="sat">Satellite</button>
+        <button type="button" data-base="vec">Drawn map</button>
+      </div>
+      <div id="map-callout"></div>
       <div id="sat-credit">Imagery: Sentinel-2 cloudless 2020 by EOX IT Services GmbH (CC BY 4.0), from modified Copernicus Sentinel-2 data</div>
         <div class="zoom-controls">
           <button type="button" class="zoom-btn" id="zoom-in" title="Zoom in" aria-label="Zoom in">+</button>
           <button type="button" class="zoom-btn" id="zoom-out" title="Zoom out" aria-label="Zoom out">&minus;</button>
           <button type="button" class="zoom-btn reset" id="zoom-reset" title="Reset view" aria-label="Reset view">&#8634;</button>
-          <button type="button" class="zoom-btn reset" id="basemap-toggle" title="Switch between the drawn basemap and satellite imagery" aria-pressed="false">SAT</button>
         </div>
       </div>
       <div class="map-key">
@@ -2057,13 +2077,22 @@
     const rect = svg.getBoundingClientRect();
     zoomAt(rect.left+rect.width/2, rect.top+rect.height/2, 1/1.4);
   });
-  const satBtn = document.getElementById("basemap-toggle");
-  satBtn.addEventListener("click", ()=>{
-    const on = svg.classList.toggle("sat");
-    satBtn.setAttribute("aria-pressed", on ? "true" : "false");
-    satBtn.textContent = on ? "MAP" : "SAT";
-    document.getElementById("sat-credit").style.display = on ? "block" : "none";
+  const baseSwitch = document.getElementById("basemap-switch");
+  function setBasemap(sat){
+    svg.classList.toggle("sat", sat);
+    document.getElementById("sat-credit").style.display = sat ? "block" : "none";
+    baseSwitch.querySelectorAll("button").forEach(b=>{
+      const on = (b.dataset.base === "sat") === sat;
+      b.classList.toggle("active", on);
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+  }
+  baseSwitch.addEventListener("click", e=>{
+    const b = e.target.closest("button");
+    if (b) setBasemap(b.dataset.base === "sat");
   });
+  /* Satellite is the default: it is what this map gets opened for. */
+  setBasemap(true);
 
   document.getElementById("zoom-reset").addEventListener("click", ()=>{
     view = {...HOME_VIEW};
