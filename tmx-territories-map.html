@@ -233,6 +233,16 @@
   .city-label { font-size: 11.5px; fill: var(--text-primary); }
   .proposed-label { font-size: 11.5px; fill: #7a4e00; font-weight: 600; }
   .marine-label { font-size: 11.5px; fill: #14507f; font-weight: 600; }
+  /* A halo in both modes, not just satellite. With 109 markers on the map a
+     place name often sits over a cluster of dots; the text was already painted
+     above them, but without a halo the dots read through the gaps between
+     letters. Satellite overrides this to a dark halo further down. */
+  .city-label, .proposed-label, .marine-label, .map-label {
+    paint-order: stroke fill;
+    stroke: rgba(252,252,251,0.92);
+    stroke-width: 3px;
+    stroke-linejoin: round;
+  }
   .marine-dot { fill: #14507f; stroke: #fff; stroke-width: 1; }
   .river-dot { fill: #fff; stroke: var(--text-muted); stroke-width: 1.3; }
   .dispute-dot { fill: var(--critical); stroke: #fff; stroke-width: 1; }
@@ -461,10 +471,10 @@
     {n:"Hope, BC", lat:49.38, lon:-121.44, label:true},
     {n:"Chilliwack, BC", lat:49.17, lon:-121.95, label:true},
     {n:"Abbotsford, BC (Sumas)", lat:49.04, lon:-122.15, label:true},
-    {n:"Langley Township, BC", lat:49.10, lon:-122.66, label:true},
+    {n:"Langley, BC", lat:49.10, lon:-122.66, label:true},
     {n:"Surrey, BC", lat:49.11, lon:-122.83, label:true},
     {n:"Coquitlam, BC (Fraser crossing)", lat:49.22, lon:-122.81, label:true, river:true},
-    {n:"Burnaby / Westridge Terminal", lat:49.28, lon:-122.94, label:true},
+    {n:"Westridge Terminal", lat:49.28, lon:-122.94, label:true},
     {n:"Westridge Marine Terminal", lat:49.29, lon:-122.95}
   ];
 
@@ -1379,29 +1389,39 @@
     return measureCanvas.measureText(str).width;
   }
   const placedBoxes = [];
+  /* Clearance between labels, in viewBox units. Determined by sweep, not taste:
+     at 4 and above the Lower Mainland runs out of room and the placer starts
+     falling back onto overlaps; at 2 the gaps close to under a pixel. 3 keeps
+     all 32 labels placed with none overlapping in either basemap mode. The real
+     constraint is that seven names compete for a small area at the home view;
+     zooming separates them, because labels grow k^0.35 while the map spreads k. */
+  const LABEL_PAD = 3;
+  /* Orientation labels (straits, regions, islands) are optional, so they can
+     afford to insist on more room and drop out if they cannot get it. Holding
+     them further off the city names buys back the gaps that matter. */
+  const LABEL_PAD_OPTIONAL = 6;
   function boxesOverlap(a, b, pad){
     return !(a.x2+pad < b.x1 || b.x2+pad < a.x1 || a.y2+pad < b.y1 || b.y2+pad < a.y1);
   }
   function placeLabel(cx, cy, text, fontPx, optional){
     const w = textWidth(text, fontPx), h = fontPx * 1.05;
-    const candidates = [
-      {dx:6,  dy:-5,  anchor:"start"},
-      {dx:6,  dy:14,  anchor:"start"},
-      {dx:-6, dy:-5,  anchor:"end"},
-      {dx:-6, dy:14,  anchor:"end"},
-      {dx:0,  dy:-10, anchor:"middle"},
-      {dx:0,  dy:19,  anchor:"middle"},
-      {dx:9,  dy:-16, anchor:"start"},
-      {dx:9,  dy:24,  anchor:"start"},
-      {dx:-9, dy:-16, anchor:"end"},
-      {dx:-9, dy:24,  anchor:"end"}
+    /* Two rings. The inner one is the old candidate set; the outer gives the
+       placer somewhere to go in the Lower Mainland, where seven names compete
+       for the same few square units and the fallback used to be an overlap. */
+    const OFFSETS = [
+      [6,-5],[6,14],[-6,-5],[-6,14],[0,-10],[0,19],[9,-16],[9,24],[-9,-16],[-9,24],
+      [15,-5],[15,16],[-15,-5],[-15,16],[0,-23],[0,32],[18,-25],[18,33],[-18,-25],[-18,33]
     ];
+    const candidates = OFFSETS.map(([dx,dy])=>({
+      dx, dy, anchor: dx > 0 ? "start" : dx < 0 ? "end" : "middle"
+    }));
     for (const c of candidates){
       const tx = cx + c.dx, ty = cy + c.dy;
       const x1 = c.anchor === "start" ? tx : c.anchor === "end" ? tx - w : tx - w/2;
       const x2 = x1 + w;
       const box = {x1, x2, y1: ty - h, y2: ty};
-      if (!placedBoxes.some(b => boxesOverlap(box, b, 2))){
+      const pad = optional ? LABEL_PAD_OPTIONAL : LABEL_PAD;
+      if (!placedBoxes.some(b => boxesOverlap(box, b, pad))){
         placedBoxes.push(box);
         return {x: tx, y: ty, anchor: c.anchor};
       }
@@ -1891,6 +1911,26 @@
     (fnRegionGroups[f.region] || fnMarkerGroup).appendChild(pin);
   });
   svg.appendChild(fnMarkerGroup);
+
+  /* Text on top of everything, dots left where they are. Markers are appended
+     after the route loops, so a dot could otherwise sit on a place name;
+     Abbotsford was half buried under the Fraser Valley cluster. Raising whole
+     pin groups is not enough, because each group carries its own dot as well as
+     its text, so a raised group's dot lands on a neighbour's name. Splitting the
+     text into its own layer, each piece keeping its pin anchor so the zoom
+     counter-scale still applies, puts every name above every dot. Labels carry
+     pointer-events:none, so this does not intercept clicks meant for a marker. */
+  {
+    const labelTextLayer = el("g", {id:"label-text"});
+    [...svg.querySelectorAll("g.pin")]
+      .filter(g => g.querySelector("text"))
+      .forEach(g => {
+        const holder = el("g", {class:"pin", style:g.getAttribute("style")});
+        holder.appendChild(g.querySelector("text"));
+        labelTextLayer.appendChild(holder);
+      });
+    svg.appendChild(labelTextLayer);
+  }
 
   const legendRows = document.getElementById("legend-rows");
   const detailPanel = document.getElementById("detail-panel");
